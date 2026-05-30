@@ -12,27 +12,39 @@ export default function ValidationSummary({ migrationId }) {
   const [validationData, setValidationData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadValidationResults();
-  }, [migrationId]);
-
   const loadValidationResults = async () => {
-    setIsLoading(true);
     try {
-      // getValidationResults will be added to api.js in Phase 3/4
-      if (api.getValidationResults) {
-        const { data } = await api.getValidationResults(migrationId);
-        setValidationData(data);
-      } else {
-        setValidationData(null);
-      }
+      const { data } = await api.getValidationResults(migrationId);
+      setValidationData(data);
+      return data;
     } catch (error) {
       console.error('Failed to load validation results:', error);
-      toast.error('Failed to load validation results');
+      setValidationData(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadValidationResults();
+  }, [migrationId]);
+
+  // Auto-poll every 10s while no results are loaded (migration may still be in progress)
+  useEffect(() => {
+    if (validationData && validationData.results && validationData.results.length > 0) {
+      return; // Already have data, no need to poll
+    }
+
+    const timer = setInterval(async () => {
+      const result = await loadValidationResults();
+      if (result && result.results && result.results.length > 0) {
+        clearInterval(timer);
+      }
+    }, 10000);
+
+    return () => clearInterval(timer);
+  }, [migrationId, validationData]);
 
   if (isLoading) {
     return (
@@ -48,9 +60,15 @@ export default function ValidationSummary({ migrationId }) {
       <div className="text-center py-12 text-gray-500">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
         <p className="text-lg font-medium mb-2">No validation results yet</p>
-        <p className="text-sm">
-          Fidelity validation will run once the self-healing validation agent is triggered.
+        <p className="text-sm mb-4">
+          Validation results will appear here once the migration pipeline completes.
         </p>
+        <button
+          onClick={loadValidationResults}
+          className="text-sm text-primary-600 hover:text-primary-800 underline"
+        >
+          Refresh Now
+        </button>
       </div>
     );
   }
@@ -165,7 +183,10 @@ export default function ValidationSummary({ migrationId }) {
                         <div>
                           <span className="text-gray-500">ThoughtSpot Value:</span>
                           <span className="ml-2 text-gray-900 font-mono font-medium">
-                            {typeof slice.source_value === 'number' ? slice.source_value.toFixed(2) : slice.source_value || 'N/A'}
+                            {(() => {
+                              const val = slice.source_value ?? slice.tableau_value;
+                              return typeof val === 'number' ? val.toFixed(2) : val || 'N/A';
+                            })()}
                           </span>
                         </div>
 
