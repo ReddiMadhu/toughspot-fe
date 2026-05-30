@@ -8,6 +8,8 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -29,12 +31,22 @@ function CalculationNode({ data }) {
 
   return (
     <div
-      className="px-4 py-3 rounded-lg shadow-lg min-w-[200px] text-white"
+      className="px-4 py-3 rounded-lg shadow-lg min-w-[200px] text-white relative"
       style={{
         backgroundColor: currentStyle.background,
         border: currentStyle.border,
       }}
     >
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{ background: '#ffffff', width: 6, height: 6 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ background: '#ffffff', width: 6, height: 6 }}
+      />
       <div className="font-semibold text-sm mb-1">{data.label}</div>
       {data.formula && (
         <div className="text-xs opacity-90 truncate max-w-[180px] font-mono">

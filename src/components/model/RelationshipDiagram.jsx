@@ -13,6 +13,8 @@ import ReactFlow, {
   Controls,
   Background,
   MiniMap,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useEffect } from 'react';
@@ -21,7 +23,17 @@ import Spinner from '../common/Spinner.jsx';
 // ── Custom Table Node ──────────────────────────────────────────────────────────
 function TableNode({ data }) {
   return (
-    <div className="bg-white rounded-lg border-2 border-primary-200 shadow-md min-w-[165px] overflow-hidden">
+    <div className="bg-white rounded-lg border-2 border-primary-200 shadow-md min-w-[165px] overflow-hidden relative">
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{ background: '#ec3f06', width: 8, height: 8 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ background: '#ec3f06', width: 8, height: 8 }}
+      />
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-3 py-2">
         <p className="text-xs font-bold text-white truncate">{data.label}</p>
         <p className="text-[10px] text-primary-200">

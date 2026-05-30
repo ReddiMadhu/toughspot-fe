@@ -40,6 +40,8 @@ const api = {
 
   getCorrectionHistory: (migrationId) => client.get(`/ts-migration/${migrationId}/correction-history`),
 
+  getValidationResults: (migrationId) => client.get(`/ts-migration/${migrationId}/validation-results`),
+
   getRecommendations: (migrationId) => client.get(`/ts-migration/${migrationId}/recommendations`),
 
   getModelEnhancements: (migrationId) => client.get(`/ts-migration/${migrationId}/model-enhancements`),
