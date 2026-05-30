@@ -1,23 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AppShell from '../components/layout/AppShell.jsx';
 import api from '../services/api.js';
 import useMigrationStore from '../stores/migrationStore.js';
+import { useMigrationProgressStream } from '../hooks/useMigrationProgressStream.js';
 
 const STAGES = [
-  { key: 'parsing', label: 'Parsing TML files', progress: 20 },
-  { key: 'converting', label: 'Converting formulas to DAX', progress: 50 },
-  { key: 'generating', label: 'Generating Power BI project (PBIP)', progress: 75 },
-  { key: 'exporting', label: 'Packaging Excel, DAX & JSON exports', progress: 90 },
-  { key: 'done', label: 'Migration complete!', progress: 100 },
+  { key: 'parsing', label: 'Parsing TML files', progress: 15 },
+  { key: 'building_graph', label: 'Building logic graph & dependencies', progress: 28 },
+  { key: 'converting', label: 'Converting formulas to DAX', progress: 55 },
+  { key: 'generating_pbip', label: 'Generating Power BI project (PBIP)', progress: 70 },
+  { key: 'exporting', label: 'Generating exports & summaries', progress: 85 },
+  { key: 'packaging', label: 'Packaging outputs', progress: 95 },
+  { key: 'completed', label: 'Migration complete!', progress: 100 },
 ];
 
 export default function ProcessingPage() {
   const { migrationId } = useParams();
   const navigate = useNavigate();
-  const { actions, status: storeStatus } = useMigrationStore();
+  const { actions } = useMigrationStore();
 
   const [stageIndex, setStageIndex] = useState(0);
   const [progress, setProgress] = useState(5);
@@ -25,55 +28,86 @@ export default function ProcessingPage() {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
 
-  const pollRef = useRef(null);
-  const stageRef = useRef(null);
+  // Hook into real-time Server-Sent Events (SSE) updates
+  const { lastMessage, connected } = useMigrationProgressStream(migrationId, status === 'processing');
 
-  // Animate through stages
-  useEffect(() => {
-    let idx = 0;
-    stageRef.current = setInterval(() => {
-      if (idx < STAGES.length - 1 && status === 'processing') {
-        idx++;
-        setStageIndex(idx);
-        setProgress(STAGES[idx].progress);
-      }
-    }, 1800);
-    return () => clearInterval(stageRef.current);
-  }, []);
-
-  // Poll backend for real status
+  // Initial Status Load to fetch current progress or redirect if already completed/failed
   useEffect(() => {
     if (!migrationId) return;
-
-    const poll = async () => {
+    const initStatus = async () => {
       try {
         const { data } = await api.getStatus(migrationId);
         if (data.status === 'completed') {
-          clearInterval(pollRef.current);
-          clearInterval(stageRef.current);
-          setStageIndex(STAGES.length - 1);
           setProgress(100);
+          setStageIndex(STAGES.length - 1);
           setStatus('completed');
           setStats(data);
           actions.completeMigration(data);
-          toast.success('Migration complete! Redirecting to review...');
-          setTimeout(() => navigate(`/migration/${migrationId}/review`), 1200);
+          navigate(`/migration/${migrationId}/workspace`);
         } else if (data.status === 'failed') {
-          clearInterval(pollRef.current);
-          clearInterval(stageRef.current);
           setStatus('failed');
           setError(data.error_message || 'Migration pipeline failed');
           actions.failMigration(data.error_message);
-          toast.error('Migration failed');
+        } else {
+          // processing
+          setProgress(data.progress_percent || 5);
+          const idx = STAGES.findIndex(s => s.key === data.current_stage);
+          if (idx !== -1) {
+            setStageIndex(idx);
+          }
+          actions.setProgress(data.progress_percent || 5, data.current_stage || 'parsing', 'Resuming progress tracking...');
         }
       } catch (e) {
-        console.warn('Polling error:', e);
+        console.error('Failed to fetch initial status:', e);
       }
     };
+    initStatus();
+  }, [migrationId, actions, navigate]);
 
-    pollRef.current = setInterval(poll, 2000);
-    return () => clearInterval(pollRef.current);
-  }, [migrationId]);
+  // Handle WebSocket / Polling Messages
+  useEffect(() => {
+    if (!lastMessage) return;
+    try {
+      const data = typeof lastMessage.data === 'string' ? JSON.parse(lastMessage.data) : lastMessage.data;
+      
+      const isCompleted = data.type === 'completed' || data.current_stage === 'completed' || data.status === 'completed' || data.progress_percent === 100;
+      const isFailed = data.type === 'failed' || data.current_stage === 'failed' || data.status === 'failed' || data.progress_percent < 0;
+
+      if (isCompleted) {
+        setProgress(100);
+        setStageIndex(STAGES.length - 1);
+        setStatus('completed');
+        
+        const fetchFinalStats = async () => {
+          try {
+            const response = await api.getStatus(migrationId);
+            setStats(response.data);
+            actions.completeMigration(response.data);
+          } catch (err) {
+            console.error(err);
+          }
+        };
+        fetchFinalStats();
+        
+        toast.success('Migration complete! Redirecting to workspace...');
+        setTimeout(() => navigate(`/migration/${migrationId}/workspace`), 1200);
+      } else if (isFailed) {
+        setStatus('failed');
+        setError(data.message || 'Migration pipeline failed');
+        actions.failMigration(data.message);
+        toast.error('Migration failed');
+      } else if (data.type === 'progress') {
+        setProgress(data.progress_percent);
+        const idx = STAGES.findIndex(s => s.key === data.current_stage);
+        if (idx !== -1) {
+          setStageIndex(idx);
+        }
+        actions.setProgress(data.progress_percent, data.current_stage, data.message);
+      }
+    } catch (err) {
+      console.error('Failed to parse WS message:', err);
+    }
+  }, [lastMessage, migrationId, actions, navigate]);
 
   const handleRetry = () => navigate('/upload');
 
@@ -119,7 +153,15 @@ export default function ProcessingPage() {
                   <div className="w-7 h-7 border-3 border-primary-200 border-t-primary-600 rounded-full animate-spin" style={{ borderWidth: '3px' }} />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-1">Migrating your ThoughtSpot content</h3>
-                <p className="text-sm text-gray-500">This usually takes 10–30 seconds. Do not close this page.</p>
+                <p className="text-sm text-gray-500 mb-2">This usually takes 10–30 seconds. Do not close this page.</p>
+                
+                {/* Connection status indicator */}
+                <div className="flex items-center justify-center gap-1.5 mt-2">
+                  <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                  <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
+                    {connected ? 'Live Stream' : 'Connecting...'}
+                  </span>
+                </div>
               </div>
 
               {/* Progress bar */}

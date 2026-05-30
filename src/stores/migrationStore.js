@@ -14,6 +14,9 @@ const useMigrationStore = create((set) => ({
     elapsedSeconds: 0,
   },
   conversions: [],
+  progressPercent: 0,
+  currentStage: '',
+  progressMessage: '',
   activeStep: 1,        // 1-5
   error: null,
   narrativeSummary: null,
@@ -24,6 +27,13 @@ const useMigrationStore = create((set) => ({
     setStatus: (status) => set({ status }),
 
     setFiles: (files) => set({ files }),
+
+    setProgress: (percent, stage, message) =>
+      set({
+        progressPercent: percent,
+        currentStage: stage,
+        progressMessage: message,
+      }),
 
     setStats: (stats) =>
       set((state) => ({
@@ -51,6 +61,9 @@ const useMigrationStore = create((set) => ({
         status: 'processing',
         files: files.map((f) => f.name),
         activeStep: 2,
+        progressPercent: 0,
+        currentStage: 'parsing',
+        progressMessage: 'Initializing migration...',
         error: null,
         narrativeSummary: null,
       }),
@@ -59,6 +72,9 @@ const useMigrationStore = create((set) => ({
       set((state) => ({
         status: 'completed',
         activeStep: 3,
+        progressPercent: 100,
+        currentStage: 'completed',
+        progressMessage: 'Migration complete!',
         narrativeSummary: stats.narrative_summary ?? null,
         stats: {
           tables: stats.tables ?? 0,
@@ -72,7 +88,7 @@ const useMigrationStore = create((set) => ({
       })),
 
     failMigration: (error) =>
-      set({ status: 'failed', error, activeStep: 2 }),
+      set({ status: 'failed', error, activeStep: 2, progressPercent: -1 }),
 
     reset: () =>
       set({
@@ -81,6 +97,9 @@ const useMigrationStore = create((set) => ({
         files: [],
         stats: { tables: 0, formulasConverted: 0, highConfidence: 0, mediumConfidence: 0, lowConfidence: 0, requiresReview: 0, elapsedSeconds: 0 },
         conversions: [],
+        progressPercent: 0,
+        currentStage: '',
+        progressMessage: '',
         activeStep: 1,
         error: null,
         narrativeSummary: null,

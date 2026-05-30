@@ -5,9 +5,17 @@ import { Toaster } from 'react-hot-toast';
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
 const UploadPage = lazy(() => import('./pages/UploadPage.jsx'));
 const ProcessingPage = lazy(() => import('./pages/ProcessingPage.jsx'));
+const WorkspacePage = lazy(() => import('./pages/WorkspacePage.jsx'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 const DataModelPage = lazy(() => import('./pages/DataModelPage.jsx'));
 const ExportPage = lazy(() => import('./pages/ExportPage.jsx'));
+
+// Wizard pages
+const Page1DataUnderstanding = lazy(() => import('./pages/migration-wizard/Page1DataUnderstanding.jsx'));
+const Page2ModelIntelligence = lazy(() => import('./pages/migration-wizard/Page2ModelIntelligence.jsx'));
+const Page3TSLogic = lazy(() => import('./pages/migration-wizard/Page3TSLogic.jsx'));
+const Page4DAXConversion = lazy(() => import('./pages/migration-wizard/Page4DAXConversion.jsx'));
+const Page5Recommendations = lazy(() => import('./pages/migration-wizard/Page5Recommendations.jsx'));
 
 function LoadingFallback() {
   return (
@@ -28,7 +36,7 @@ export default function App() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#fff',
+            background: '#white',
             color: '#111827',
             borderRadius: '10px',
             boxShadow: '0 4px 24px -4px rgba(0,0,0,0.12)',
@@ -45,9 +53,18 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/migration/:migrationId/processing" element={<ProcessingPage />} />
+          <Route path="/migration/:migrationId/workspace" element={<WorkspacePage />} />
           <Route path="/migration/:migrationId/review" element={<ReviewPage />} />
           <Route path="/migration/:migrationId/data-model" element={<DataModelPage />} />
           <Route path="/migration/:migrationId/export" element={<ExportPage />} />
+
+          {/* 5-page migration wizard routes */}
+          <Route path="/migration-wizard/:migrationId/data-understanding" element={<Page1DataUnderstanding />} />
+          <Route path="/migration-wizard/:migrationId/model-intelligence" element={<Page2ModelIntelligence />} />
+          <Route path="/migration-wizard/:migrationId/field-mapping" element={<Page3TSLogic />} />
+          <Route path="/migration-wizard/:migrationId/formula-conversion" element={<Page4DAXConversion />} />
+          <Route path="/migration-wizard/:migrationId/review" element={<Page5Recommendations />} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

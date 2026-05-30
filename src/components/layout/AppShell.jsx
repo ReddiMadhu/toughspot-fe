@@ -8,7 +8,7 @@ import useMigrationStore from '../../stores/migrationStore.js';
 const STEPS = [
   { id: 1, label: 'Upload Files', icon: Upload, path: '/upload' },
   { id: 2, label: 'Processing', icon: Cpu, path: null },
-  { id: 3, label: 'Review Conversions', icon: CheckSquare, path: null },
+  { id: 3, label: 'Workspace Dashboard', icon: CheckSquare, path: null },
   { id: 4, label: 'Data Model', icon: Database, path: null },
   { id: 5, label: 'Export', icon: Download, path: null },
 ];
@@ -30,7 +30,7 @@ export default function AppShell({ children, title }) {
     if (!migrationId) return null;
     const pathMap = {
       2: `/migration/${migrationId}/processing`,
-      3: `/migration/${migrationId}/review`,
+      3: `/migration/${migrationId}/workspace`,
       4: `/migration/${migrationId}/data-model`,
       5: `/migration/${migrationId}/export`,
     };
