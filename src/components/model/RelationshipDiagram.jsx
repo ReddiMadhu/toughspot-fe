@@ -21,6 +21,7 @@ import { useEffect } from 'react';
 import Spinner from '../common/Spinner.jsx';
 
 // ── Custom Table Node ──────────────────────────────────────────────────────────
+// ── Custom Table Node ──────────────────────────────────────────────────────────
 function TableNode({ data }) {
   return (
     <div className="bg-white rounded-lg border-2 border-primary-200 shadow-md min-w-[165px] overflow-hidden relative">
@@ -45,10 +46,23 @@ function TableNode({ data }) {
           <div key={col.name} className="flex items-center gap-1.5 text-[11px]">
             <span
               className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                col.type === 'MEASURE' ? 'bg-amber-400' : 'bg-gray-300'
+                col.isJoinKey
+                  ? 'bg-amber-500'
+                  : col.type === 'MEASURE'
+                  ? 'bg-amber-400'
+                  : 'bg-gray-300'
               }`}
             />
-            <span className="text-gray-600 truncate">{col.name}</span>
+            <span
+              className={`truncate ${
+                col.isJoinKey ? 'text-primary-700 font-bold' : 'text-gray-600'
+              }`}
+            >
+              {col.name}
+              {col.isJoinKey && (
+                <span className="text-[10px] text-amber-500 ml-1">🔑</span>
+              )}
+            </span>
             <span className="text-gray-300 text-[10px] ml-auto flex-shrink-0">
               {col.dataType?.slice(0, 3)}
             </span>
@@ -72,23 +86,46 @@ function buildGraphElements(tables = [], joins = []) {
   const H_SPACE = 280;
   const V_SPACE = 290;
 
-  const nodes = tables.map((table, i) => ({
-    id:       table.name,
-    type:     'tableNode',
-    position: {
-      x: (i % COLS) * H_SPACE + 40,
-      y: Math.floor(i / COLS) * V_SPACE + 40,
-    },
-    data: {
-      label:       table.name,
-      columnCount: table.column_details?.length ?? 0,
-      columns: (table.column_details ?? []).map((c) => ({
+  // Build a set of joining columns: "tableName::columnName"
+  const joinKeys = new Set();
+  joins.forEach((j) => {
+    if (j.left_table && j.left_column) {
+      joinKeys.add(`${j.left_table}::${j.left_column}`);
+    }
+    if (j.right_table && j.right_column) {
+      joinKeys.add(`${j.right_table}::${j.right_column}`);
+    }
+  });
+
+  const nodes = tables.map((table, i) => {
+    // Map and sort columns: join keys first, then non-join keys
+    const mappedColumns = (table.column_details ?? [])
+      .map((c) => ({
         name:     c.name,
         dataType: c.data_type ?? '',
         type:     c.column_type ?? 'ATTRIBUTE',
-      })),
-    },
-  }));
+        isJoinKey: joinKeys.has(`${table.name}::${c.name}`),
+      }))
+      .sort((a, b) => {
+        if (a.isJoinKey && !b.isJoinKey) return -1;
+        if (!a.isJoinKey && b.isJoinKey) return 1;
+        return 0;
+      });
+
+    return {
+      id:       table.name,
+      type:     'tableNode',
+      position: {
+        x: (i % COLS) * H_SPACE + 40,
+        y: Math.floor(i / COLS) * V_SPACE + 40,
+      },
+      data: {
+        label:       table.name,
+        columnCount: table.column_details?.length ?? 0,
+        columns:     mappedColumns,
+      },
+    };
+  });
 
   const edges = joins.map((join, i) => ({
     id:         `e${i}`,
