@@ -17,9 +17,7 @@ const useMigrationStore = create((set) => ({
   progressPercent: 0,
   currentStage: '',
   progressMessage: '',
-  activeStep: 1,        // 1-5
   error: null,
-  narrativeSummary: null,
 
   actions: {
     setMigrationId: (id) => set({ migrationId: id }),
@@ -37,7 +35,6 @@ const useMigrationStore = create((set) => ({
 
     setStats: (stats) =>
       set((state) => ({
-        narrativeSummary: stats.narrative_summary ?? state.narrativeSummary,
         stats: {
           tables: stats.tables ?? state.stats.tables,
           formulasConverted: stats.formulas_converted ?? stats.formulasConverted ?? state.stats.formulasConverted,
@@ -51,8 +48,6 @@ const useMigrationStore = create((set) => ({
 
     setConversions: (conversions) => set({ conversions }),
 
-    setActiveStep: (step) => set({ activeStep: step }),
-
     setError: (error) => set({ error }),
 
     startMigration: (migrationId, files) =>
@@ -60,22 +55,18 @@ const useMigrationStore = create((set) => ({
         migrationId,
         status: 'processing',
         files: files.map((f) => f.name),
-        activeStep: 2,
         progressPercent: 0,
         currentStage: 'parsing',
         progressMessage: 'Initializing migration...',
         error: null,
-        narrativeSummary: null,
       }),
 
     completeMigration: (stats) =>
-      set((state) => ({
+      set(() => ({
         status: 'completed',
-        activeStep: 3,
         progressPercent: 100,
         currentStage: 'completed',
         progressMessage: 'Migration complete!',
-        narrativeSummary: stats.narrative_summary ?? null,
         stats: {
           tables: stats.tables ?? 0,
           formulasConverted: stats.formulas_converted ?? 0,
@@ -88,7 +79,7 @@ const useMigrationStore = create((set) => ({
       })),
 
     failMigration: (error) =>
-      set({ status: 'failed', error, activeStep: 2, progressPercent: -1 }),
+      set({ status: 'failed', error, progressPercent: -1 }),
 
     reset: () =>
       set({
@@ -100,9 +91,7 @@ const useMigrationStore = create((set) => ({
         progressPercent: 0,
         currentStage: '',
         progressMessage: '',
-        activeStep: 1,
         error: null,
-        narrativeSummary: null,
       }),
   },
 

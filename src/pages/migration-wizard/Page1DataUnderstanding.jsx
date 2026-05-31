@@ -62,8 +62,8 @@ export default function Page1DataUnderstanding() {
   const loadComprehensiveMetadata = async (id) => {
     setIsLoading(true);
     try {
-      console.log('[Page1] Loading workbook metadata (cached or fresh)...');
-      const data = await loadWorkbookMetadata(id);
+      console.log('[Page1] Loading workbook metadata (fresh from server)...');
+      const data = await loadWorkbookMetadata(id, true); // forceRefresh = true
       setMetadata(data);
       console.log('[Page1] Metadata loaded successfully.');
     } catch (error) {

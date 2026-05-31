@@ -38,9 +38,9 @@ const useMigrationCacheStore = create((set, get) => ({
     }
   },
 
-  loadWorkbookMetadata: async (migrationId) => {
+  loadWorkbookMetadata: async (migrationId, forceRefresh = false) => {
     const cached = get().metadataCache[migrationId];
-    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+    if (!forceRefresh && cached && Date.now() - cached.timestamp < cached.ttl) {
       return cached.data;
     }
 
