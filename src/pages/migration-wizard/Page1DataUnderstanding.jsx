@@ -225,7 +225,7 @@ export default function Page1DataUnderstanding() {
             <Loader className="w-8 h-8 animate-spin text-primary-650 mx-auto mb-4" />
             <p className="text-gray-700 font-medium">Loading comprehensive metadata...</p>
             <p className="text-sm text-gray-500 mt-1">
-              Extracting liveboards, worksheets, formulas, tables...
+              Extracting liveboards, visuals, formulas, tables...
             </p>
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function Page1DataUnderstanding() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Source Dashboard Exploration</h1>
               <p className="text-sm text-gray-600 mt-1">
-                Complete inspection of your ThoughtSpot SpotApp — liveboards, worksheets, formulas &amp; tables
+                Complete inspection of your ThoughtSpot SpotApp — liveboards, visuals, formulas &amp; tables
               </p>
             </div>
             <Button onClick={handleNext} size="md" className="px-6">
@@ -291,7 +291,7 @@ export default function Page1DataUnderstanding() {
                     <div className="text-2xl font-bold text-gray-900">
                       {metadata.summary?.total_worksheets || 0}
                     </div>
-                    <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">Worksheets</div>
+                    <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">Visuals</div>
                   </div>
                 </div>
 
@@ -332,13 +332,13 @@ export default function Page1DataUnderstanding() {
                   <div className="p-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-3">
                       <BarChart2 className="w-5 h-5 text-blue-600" />
-                      Worksheets / Visualizations ({worksheets.length})
+                      Visuals ({worksheets.length})
                     </h2>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="Search worksheets..."
+                        placeholder="Search visuals..."
                         value={worksheetSearch}
                         onChange={(e) => setWorksheetSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -349,7 +349,7 @@ export default function Page1DataUnderstanding() {
                   <div className="flex-1 overflow-y-auto p-4">
                     <div className="space-y-2">
                       {worksheets.length === 0 && (
-                        <p className="text-sm text-gray-400 italic text-center py-8">No worksheets found</p>
+                        <p className="text-sm text-gray-400 italic text-center py-8">No visuals found</p>
                       )}
                       {worksheets.map((ws, idx) => {
                         const isSelected = selectedWorksheet?.name === ws.name;
@@ -477,7 +477,7 @@ export default function Page1DataUnderstanding() {
                     {selectedWorksheet && (
                       <div className="flex items-center gap-2 mb-2 p-2 bg-blue-50 rounded border border-blue-100 text-xs">
                         <span className="font-medium text-blue-800">
-                          Filtered by: {selectedWorksheet.name}
+                          Filtered by visual: {selectedWorksheet.name}
                         </span>
                         <button
                           onClick={() => setSelectedWorksheet(null)}
@@ -505,7 +505,7 @@ export default function Page1DataUnderstanding() {
                       {calculatedFields.length === 0 && (
                         <p className="text-sm text-gray-400 italic text-center py-8">
                           {selectedWorksheet
-                            ? 'No formulas found for this worksheet'
+                            ? 'No formulas found for this visual'
                             : 'No calculated fields found'}
                         </p>
                       )}

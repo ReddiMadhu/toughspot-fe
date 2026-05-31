@@ -16,6 +16,7 @@ import {
   FileText,
   ArrowRight,
   ChevronRight,
+  Grid,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,7 @@ import MigrationSidebar from '../components/migration/MigrationSidebar.jsx';
 import Button from '../components/common/Button.jsx';
 import api from '../services/api.js';
 import useMigrationStore from '../stores/migrationStore.js';
+import useMigrationCacheStore from '../stores/migrationCacheStore.js';
 
 // ── Download option definitions ───────────────────────────────────────────────
 const DOWNLOAD_OPTIONS = [
@@ -122,6 +124,8 @@ export default function ExportPage() {
   const { stats, actions } = useMigrationStore();
   const [downloading, setDownloading] = useState({});
   const [migrationInfo, setMigrationInfo] = useState(null);
+  const loadWorkbookMetadata = useMigrationCacheStore((state) => state.loadWorkbookMetadata);
+  const [metadata, setMetadata] = useState(null);
 
   useEffect(() => {
     // Fetch latest status for stats display
@@ -129,8 +133,12 @@ export default function ExportPage() {
       api.getStatus(migrationId)
         .then((r) => setMigrationInfo(r.data))
         .catch(() => {});
+
+      loadWorkbookMetadata(migrationId)
+        .then((data) => setMetadata(data))
+        .catch((err) => console.error("Failed to load metadata in ExportPage", err));
     }
-  }, [migrationId]);
+  }, [migrationId, loadWorkbookMetadata]);
 
   const handleDownload = (fileType) => {
     setDownloading((prev) => ({ ...prev, [fileType]: true }));
@@ -150,7 +158,7 @@ export default function ExportPage() {
   const displayStats = [
     { icon: Table2,       label: 'Tables',        value: migrationInfo?.tables ?? stats.tables },
     { icon: FileCode,     label: 'Formulas',       value: migrationInfo?.formulas_converted ?? stats.formulasConverted },
-    { icon: CheckCircle2, label: 'Auto-converted', value: `${confPct}%` },
+    { icon: Grid,         label: 'Visuals',        value: metadata?.summary?.total_worksheets ?? '—' },
     {
       icon: Clock,
       label: 'Time',
@@ -220,32 +228,6 @@ export default function ExportPage() {
                   );
                 })}
               </div>
-
-              {/* Confidence bar */}
-              {stats.formulasConverted > 0 && (
-                <div className="mt-5 max-w-sm mx-auto">
-                  <div className="flex justify-between text-[11px] text-gray-500 mb-1">
-                    <span>Formula confidence</span>
-                    <span>
-                      {stats.highConfidence} high · {stats.mediumConfidence} med · {stats.lowConfidence} low
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-gray-200 rounded-full flex overflow-hidden">
-                    <div
-                      className="bg-emerald-500 h-full transition-all"
-                      style={{ width: `${(stats.highConfidence / stats.formulasConverted) * 100}%` }}
-                    />
-                    <div
-                      className="bg-amber-400 h-full transition-all"
-                      style={{ width: `${(stats.mediumConfidence / stats.formulasConverted) * 100}%` }}
-                    />
-                    <div
-                      className="bg-red-400 h-full transition-all"
-                      style={{ width: `${(stats.lowConfidence / stats.formulasConverted) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ── Package Contents + Primary Download ── */}

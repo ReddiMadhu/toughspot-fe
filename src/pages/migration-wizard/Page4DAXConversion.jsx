@@ -11,7 +11,9 @@ import {
   Loader,
   Edit2,
   Check,
-  X
+  X,
+  Grid,
+  Database
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -27,6 +29,7 @@ export default function Page4DAXConversion() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [conversions, setConversions] = useState([]);
+  const [metadata, setMetadata] = useState(null);
   const [editingConvId, setEditingConvId] = useState(null);
   const [editFormula, setEditFormula] = useState('');
   const [saving, setSaving] = useState(false);
@@ -43,11 +46,12 @@ export default function Page4DAXConversion() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [convData, _] = await Promise.all([
+      const [convData, metaData] = await Promise.all([
         migrationApi.getConversions(migrationId),
         loadWorkbookMetadata(migrationId)
       ]);
       setConversions(convData.conversions || []);
+      setMetadata(metaData);
     } catch (error) {
       console.error('Failed to load conversions:', error);
       toast.error('Failed to load conversion data');
@@ -151,23 +155,23 @@ export default function Page4DAXConversion() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-green-200 p-5 shadow-sm flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+              <div className="bg-white rounded-lg border border-purple-200 p-5 shadow-sm flex items-center gap-4">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Grid className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-green-950">{testsPassed.length}</div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase">Pass Rate: {conversions.length > 0 ? Math.round((testsPassed.length / conversions.length) * 100) : 0}%</div>
+                  <div className="text-2xl font-bold text-gray-900">{metadata?.summary?.total_worksheets || 0}</div>
+                  <div className="text-xs text-gray-500 font-semibold uppercase">Total Visuals</div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-amber-200 p-5 shadow-sm flex items-center gap-4">
-                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-amber-600" />
+              <div className="bg-white rounded-lg border border-orange-200 p-5 shadow-sm flex items-center gap-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Database className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-amber-955">{manualReview.length}</div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase">Requires Review</div>
+                  <div className="text-2xl font-bold text-gray-900">{metadata?.summary?.total_tables || 0}</div>
+                  <div className="text-xs text-gray-500 font-semibold uppercase">Model Tables</div>
                 </div>
               </div>
             </div>
@@ -187,7 +191,6 @@ export default function Page4DAXConversion() {
                       <th className="px-6 py-3 text-left">Measure Name</th>
                       <th className="px-6 py-3 text-left">Original Formula</th>
                       <th className="px-6 py-3 text-left">Converted DAX Measure</th>
-                      <th className="px-6 py-3 text-left">Confidence</th>
                       <th className="px-6 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -214,17 +217,6 @@ export default function Page4DAXConversion() {
                                 {conv.dax_formula}
                               </div>
                             )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              hasHighConf
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : conv.confidence >= 0.6
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {Math.round(conv.confidence * 100)}%
-                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center text-xs font-semibold">
                             {isEditing ? (
