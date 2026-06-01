@@ -121,3 +121,92 @@ pre, code {
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 0.8125rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* Multi-Agent Processing Overlay — Glassmorphism                            */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Glassmorphism card base */
+.agent-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Micro-task card fade-in animation */
+@keyframes taskSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.task-card-enter {
+  animation: taskSlideIn 0.25s ease-out forwards;
+  opacity: 0;
+}
+
+/* Agent status pulse glow */
+@keyframes agentPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(236, 63, 6, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(236, 63, 6, 0);
+  }
+}
+
+.agent-active-pulse {
+  animation: agentPulse 2s ease-in-out infinite;
+}
+
+/* Sidebar agent running glow */
+@keyframes sidebarAgentGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(236, 63, 6, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(236, 63, 6, 0);
+  }
+}
+
+.sidebar-agent-running {
+  animation: sidebarAgentGlow 2s ease-in-out infinite;
+}
+
+/* Processing → Results crossfade */
+.agent-fade-exit {
+  opacity: 1;
+  transition: opacity 500ms ease;
+}
+.agent-fade-exit-active {
+  opacity: 0;
+}
+.agent-fade-enter {
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+.agent-fade-enter-active {
+  opacity: 1;
+}
+
+/* Smooth fade-in for results appearing after agent completes */
+@keyframes resultsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.results-fade-in {
+  animation: resultsFadeIn 0.5s ease-out forwards;
+}

@@ -1,5 +1,10 @@
 /**
- * Page 4: Formula Conversion - ThoughtSpot TML to DAX Conversion Results
+ * Page 3: Formula Conversion - ThoughtSpot TML to DAX Conversion Results (Old UI Format)
+ *
+ * Flow:
+ *   1. On mount, auto-triggers Agent 3 (DAX Conversion) if idle
+ *   2. Shows AgentProcessingOverlay with streaming events during processing
+ *   3. Crossfades to the classic, clean tabular results view on completion
  */
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -19,6 +24,8 @@ import toast from 'react-hot-toast';
 
 import Button from '../../components/common/Button';
 import MigrationSidebar from '../../components/migration/MigrationSidebar';
+import AgentProcessingOverlay from '../../components/migration/AgentProcessingOverlay';
+import { useAgentTrigger } from '../../hooks/useAgentTrigger';
 import useMigrationCacheStore from '../../stores/migrationCacheStore';
 import migrationApi from '../../services/migrationApi';
 
@@ -27,24 +34,36 @@ export default function Page4DAXConversion() {
   const { migrationId } = useParams();
   const loadWorkbookMetadata = useMigrationCacheStore(state => state.loadWorkbookMetadata);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const { trigger, retry, status, progress, events, error, subPhase, message } = useAgentTrigger(migrationId, 'dax_conversion');
+
+  const [isLoadingResults, setIsLoadingResults] = useState(true);
   const [conversions, setConversions] = useState([]);
   const [metadata, setMetadata] = useState(null);
   const [editingConvId, setEditingConvId] = useState(null);
   const [editFormula, setEditFormula] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Auto-trigger Agent 3 on mount if idle
   useEffect(() => {
     if (!migrationId) {
       toast.error('No migration found. Please start a migration first.');
       navigate('/');
       return;
     }
-    loadData();
-  }, [migrationId, navigate]);
+    if (status === 'idle') {
+      trigger();
+    }
+  }, [migrationId]);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  // Load results when agent completes
+  useEffect(() => {
+    if (status === 'completed' && migrationId) {
+      loadResults();
+    }
+  }, [status, migrationId]);
+
+  const loadResults = async () => {
+    setIsLoadingResults(true);
     try {
       const [convData, metaData] = await Promise.all([
         migrationApi.getConversions(migrationId),
@@ -56,7 +75,7 @@ export default function Page4DAXConversion() {
       console.error('Failed to load conversions:', error);
       toast.error('Failed to load conversion data');
     } finally {
-      setIsLoading(false);
+      setIsLoadingResults(false);
     }
   };
 
@@ -86,7 +105,7 @@ export default function Page4DAXConversion() {
       );
       toast.success('Formula updated and re-validated');
       setEditingConvId(null);
-      await loadData(); // Reload results
+      await loadResults(); // Reload results
     } catch (error) {
       console.error('Failed to save manual override:', error);
       toast.error('Failed to update formula');
@@ -95,10 +114,61 @@ export default function Page4DAXConversion() {
     }
   };
 
-  if (isLoading) {
+  // ── Processing State ──
+  if (status === 'running' || status === 'idle') {
     return (
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
-        <MigrationSidebar currentStep={4} />
+        <MigrationSidebar currentStep={3} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900">DAX Formula Conversion</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Agent translating formulas and running fidelity validation loop...
+            </p>
+          </div>
+          <AgentProcessingOverlay
+            agentName="dax_conversion"
+            agentDisplayName="DAX Conversion Agent"
+            events={events}
+            status={status}
+            progress={progress}
+            subPhase={subPhase}
+            message={message}
+            error={error}
+            onRetry={retry}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Failed State ──
+  if (status === 'failed') {
+    return (
+      <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
+        <MigrationSidebar currentStep={3} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900">DAX Formula Conversion</h1>
+          </div>
+          <AgentProcessingOverlay
+            agentName="dax_conversion"
+            agentDisplayName="DAX Conversion Agent"
+            events={events}
+            status="failed"
+            error={error}
+            onRetry={retry}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading results ──
+  if (isLoadingResults) {
+    return (
+      <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
+        <MigrationSidebar currentStep={3} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader className="w-8 h-8 animate-spin text-primary-650 mx-auto mb-4" />
@@ -109,14 +179,11 @@ export default function Page4DAXConversion() {
     );
   }
 
-  const testsPassed = conversions.filter(c => !c.requires_review && c.confidence >= 0.9);
-  const manualReview = conversions.filter(c => c.requires_review || c.confidence < 0.9);
-
   return (
     <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
-      <MigrationSidebar currentStep={4} />
+      <MigrationSidebar currentStep={3} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden results-fade-in">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
           <div className="flex items-center justify-between">
@@ -129,11 +196,11 @@ export default function Page4DAXConversion() {
             <div className="flex items-center gap-3">
               <Button
                 variant="secondary"
-                onClick={() => navigate(`/migration-wizard/${migrationId}/field-mapping`)}
+                onClick={() => navigate(`/migration-wizard/${migrationId}/model-intelligence`)}
               >
                 Back
               </Button>
-              <Button onClick={() => navigate(`/migration-wizard/${migrationId}/review`)}>
+              <Button onClick={() => navigate(`/migration-wizard/${migrationId}/export`)}>
                 Next Step
               </Button>
             </div>
@@ -194,10 +261,9 @@ export default function Page4DAXConversion() {
                       <th className="px-6 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
+                  <tbody className="bg-white divide-y divide-gray-100 text-sm">
                     {conversions.map((conv, idx) => {
                       const isEditing = editingConvId === conv.conversion_id;
-                      const hasHighConf = !conv.requires_review && conv.confidence >= 0.9;
                       return (
                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 font-semibold text-gray-900">{conv.measure_name}</td>
@@ -259,7 +325,6 @@ export default function Page4DAXConversion() {
                 </table>
               </div>
             </div>
-
           </div>
         </div>
       </div>

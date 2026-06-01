@@ -1,31 +1,40 @@
 /**
- * Migration Sidebar - Shared navigation component for ThoughtSpot migration wizard
+ * Migration Sidebar - Agent-aware navigation for 4-step wizard.
+ *
+ * Each step is linked to an agent. Shows live execution status:
+ *   - Idle/Pending: dimmed icon, "Pending" label
+ *   - Running: spinning icon with glow, "Running..." label
+ *   - Completed: green checkmark, "Complete" label
+ *   - Failed: red X, "Failed" label
  */
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Grid,
-  Layout,
-  Code,
   Database,
+  Grid,
+  Code,
+  Package,
   CheckCircle,
+  XCircle,
   ChevronLeft,
   ChevronRight,
-  Layers
+  Layers,
+  Loader2,
 } from 'lucide-react';
+import useAgentStore from '../../stores/agentStore';
 
 const MIGRATION_STEPS = [
-  { id: 1, name: 'Source Dashboard Exploration', icon: Database, pathSuffix: 'data-understanding' },
-  { id: 2, name: 'Data Model Configuration', icon: Grid, pathSuffix: 'model-intelligence' },
-  { id: 3, name: 'Calculated Fields Mapping', icon: Layout, pathSuffix: 'field-mapping' },
-  { id: 4, name: 'DAX Conversion', icon: Code, pathSuffix: 'formula-conversion' },
-  { id: 5, name: 'Review & Export', icon: CheckCircle, pathSuffix: 'review' }
+  { id: 1, name: 'Source Dashboard Exploration', agent: 'source_analysis', icon: Database, pathSuffix: 'data-understanding' },
+  { id: 2, name: 'Data Model Configuration',     agent: 'data_model',      icon: Grid,     pathSuffix: 'model-intelligence' },
+  { id: 3, name: 'DAX Conversion & Validation',  agent: 'dax_conversion',  icon: Code,     pathSuffix: 'dax-conversion' },
+  { id: 4, name: 'Export & Package',              agent: 'export',          icon: Package,  pathSuffix: 'export' },
 ];
 
 export default function MigrationSidebar({ currentStep = 1 }) {
   const navigate = useNavigate();
   const { migrationId } = useParams();
+  const agents = useAgentStore((state) => state.agents);
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem('migration-sidebar-collapsed');
@@ -45,6 +54,19 @@ export default function MigrationSidebar({ currentStep = 1 }) {
       navigate(`/migration-wizard/${migrationId}/${step.pathSuffix}`);
     } else {
       navigate('/');
+    }
+  };
+
+  const getAgentStatus = (agentName) => {
+    return agents[agentName]?.status ?? 'idle';
+  };
+
+  const getStatusLabel = (agentStatus) => {
+    switch (agentStatus) {
+      case 'running': return 'Running...';
+      case 'completed': return 'Complete';
+      case 'failed': return 'Failed';
+      default: return 'Pending';
     }
   };
 
@@ -82,7 +104,11 @@ export default function MigrationSidebar({ currentStep = 1 }) {
           {MIGRATION_STEPS.map((step) => {
             const Icon = step.icon;
             const isActive = step.id === currentStep;
-            const isCompleted = step.id < currentStep;
+            const agentStatus = getAgentStatus(step.agent);
+            const isCompleted = agentStatus === 'completed';
+            const isRunning = agentStatus === 'running';
+            const isFailed = agentStatus === 'failed';
+            const statusLabel = getStatusLabel(agentStatus);
 
             return (
               <div
@@ -93,13 +119,25 @@ export default function MigrationSidebar({ currentStep = 1 }) {
                     ? 'bg-primary-50 border-l-4 border-primary-600'
                     : 'hover:bg-gray-50'
                 }`}
-                title={isCollapsed ? step.name : ''}
+                title={isCollapsed ? `${step.name} — ${statusLabel}` : ''}
               >
                 <div className={`flex-shrink-0 ${
-                  isActive ? 'text-primary-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  isRunning
+                    ? 'text-primary-600 sidebar-agent-running rounded-full'
+                    : isCompleted
+                    ? 'text-emerald-600'
+                    : isFailed
+                    ? 'text-red-500'
+                    : isActive
+                    ? 'text-primary-600'
+                    : 'text-gray-400'
                 }`}>
-                  {isCompleted ? (
+                  {isRunning ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isCompleted ? (
                     <CheckCircle className="w-5 h-5" />
+                  ) : isFailed ? (
+                    <XCircle className="w-5 h-5" />
                   ) : (
                     <Icon className="w-5 h-5" />
                   )}
@@ -111,7 +149,14 @@ export default function MigrationSidebar({ currentStep = 1 }) {
                     }`}>
                       {step.name}
                     </div>
-                    <div className="text-xs text-gray-500">Step {step.id} of 5</div>
+                    <div className={`text-xs ${
+                      isRunning ? 'text-primary-600 font-semibold' :
+                      isCompleted ? 'text-emerald-600 font-semibold' :
+                      isFailed ? 'text-red-500 font-semibold' :
+                      'text-gray-500'
+                    }`}>
+                      Step {step.id} of 4 · {statusLabel}
+                    </div>
                   </div>
                 )}
               </div>
@@ -124,7 +169,7 @@ export default function MigrationSidebar({ currentStep = 1 }) {
       {!isCollapsed && (
         <div className="p-4 border-t border-gray-200">
           <div className="text-xs text-gray-500 text-center">
-            Progress: {currentStep}/5
+            Progress: {currentStep}/4
           </div>
         </div>
       )}

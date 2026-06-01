@@ -353,6 +353,21 @@ const migrationApi = {
     );
     return response.data;
   },
+
+  // ============================================
+  // Multi-Agent Execution
+  // ============================================
+
+  startAgent: async (migrationId, agentSlug) => {
+    const response = await apiClient.post(
+      `/ts-migration/${migrationId}/agents/${agentSlug}/start`
+    );
+    return response.data;
+  },
+
+  getAgentStreamUrl: (migrationId, agentSlug) => {
+    return `/api/v1/ts-migration/${migrationId}/agents/${agentSlug}/stream`;
+  },
 };
 
 export default migrationApi;
