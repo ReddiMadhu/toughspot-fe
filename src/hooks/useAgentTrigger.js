@@ -1,10 +1,4 @@
-/**
- * useAgentTrigger — Trigger agent execution and manage full lifecycle.
- *
- * Calls POST /agents/{slug}/start, then auto-connects SSE stream.
- * Returns { trigger, retry, status, progress, events, error, subPhase, message }.
- */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import useAgentStore from '../stores/agentStore.js';
 import { useAgentStream } from './useAgentStream.js';
 import migrationApi from '../services/migrationApi.js';
@@ -25,6 +19,41 @@ export function useAgentTrigger(migrationId, agentName) {
 
   // Connect SSE stream when agent is running
   const { connected } = useAgentStream(migrationId, agentName, isStreamActive);
+
+  // ── Virtual Visual Status to enforce a premium thinking duration ──
+  const [visualStatus, setVisualStatus] = useState(agentState?.status ?? 'idle');
+  const triggerTime = useRef(0);
+
+  useEffect(() => {
+    const realStatus = agentState?.status ?? 'idle';
+
+    if (realStatus === 'running') {
+      setVisualStatus('running');
+      triggerTime.current = Date.now();
+    } else if (realStatus === 'completed') {
+      // For DAX conversion, let it finish naturally as it already takes time.
+      // For very fast steps, enforce a minimum labor duration of 6.0 seconds.
+      const isDax = agentName === 'dax_conversion';
+      const minDuration = isDax ? 500 : 6000;
+      
+      const elapsed = triggerTime.current > 0 ? Date.now() - triggerTime.current : minDuration;
+      
+      if (elapsed < minDuration) {
+        const delay = minDuration - elapsed;
+        const t = setTimeout(() => {
+          setVisualStatus('completed');
+          triggerTime.current = 0;
+        }, delay);
+        return () => clearTimeout(t);
+      } else {
+        setVisualStatus('completed');
+        triggerTime.current = 0;
+      }
+    } else {
+      setVisualStatus(realStatus);
+      triggerTime.current = 0;
+    }
+  }, [agentState?.status, agentName]);
 
   const trigger = useCallback(async () => {
     if (!migrationId || !agentName) return;
@@ -67,12 +96,12 @@ export function useAgentTrigger(migrationId, agentName) {
     trigger,
     retry,
     connected,
-    status: agentState?.status ?? 'idle',
+    status: visualStatus,
     progress: agentState?.progress ?? 0,
     events: agentState?.events ?? [],
     error: agentState?.error ?? null,
     subPhase: agentState?.subPhase ?? '',
     message: agentState?.message ?? '',
     summary: agentState?.summary ?? null,
-  }), [trigger, retry, connected, agentState]);
+  }), [trigger, retry, connected, visualStatus, agentState]);
 }

@@ -126,12 +126,13 @@ pre, code {
 /* Multi-Agent Processing Overlay — Glassmorphism                            */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Glassmorphism card base */
+/* Light-theme container card base */
 .agent-card {
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.02);
 }
 
 /* Micro-task card fade-in animation */

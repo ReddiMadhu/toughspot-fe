@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, Loader2, Info, Zap,
+  ArrowRight, Loader2, Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -81,20 +81,6 @@ export default function UploadPage() {
               <p className="text-gray-500 text-sm">
                 Upload your ThoughtSpot TML files or a SpotApp .zip bundle to begin migration.
               </p>
-            </div>
-
-            {/* Info banner */}
-            <div className="flex gap-3 p-4 bg-primary-50 rounded-lg border border-primary-100 mb-6">
-              <Info className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-primary-700">
-                <p className="font-medium mb-1">What gets migrated:</p>
-                <ul className="space-y-0.5 text-primary-600 text-xs">
-                  <li>✓ Tables → Power BI TMDL table definitions</li>
-                  <li>✓ Worksheets / Models → Semantic model with relationships</li>
-                  <li>✓ Formulas → DAX measures (auto-converted)</li>
-                  <li>✓ Liveboards & Answers → Inventory in Excel report</li>
-                </ul>
-              </div>
             </div>
 
             {/* Drop zone */}

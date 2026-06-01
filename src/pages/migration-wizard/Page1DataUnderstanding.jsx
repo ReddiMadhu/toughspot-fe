@@ -380,7 +380,7 @@ export default function Page1DataUnderstanding() {
                               </span>
                               <span className="text-xs text-gray-400">·</span>
                               <span className="text-xs text-gray-500">
-                                {ws.measures?.length || 0} measures · {ws.dimensions?.length || 0} dims
+                                {(ws.measures || ws.rows || []).length} Y-Axis · {(ws.dimensions || ws.cols || []).length} X-Axis
                               </span>
                             </div>
                           </div>
@@ -394,18 +394,18 @@ export default function Page1DataUnderstanding() {
                           <div className="mt-3 pt-3 border-t border-blue-200 text-xs space-y-3">
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <span className="font-semibold text-gray-700 block mb-1">Dimensions:</span>
+                                <span className="font-semibold text-gray-700 block mb-1">Cols (X-Axis) / Dimensions:</span>
                                 <div className="max-h-24 overflow-y-auto bg-white border border-blue-100 rounded p-1 space-y-0.5">
-                                  {ws.dimensions?.length > 0 ? ws.dimensions.map((d, i) => (
-                                    <div key={i} className="truncate text-gray-600 pl-1 border-l-2 border-purple-200">{d}</div>
+                                  {(ws.dimensions || ws.cols || []).length > 0 ? (ws.dimensions || ws.cols || []).map((d, i) => (
+                                    <div key={i} className="truncate text-gray-600 pl-1 border-l-2 border-purple-200">{typeof d === 'object' ? d.name || d.caption : String(d)}</div>
                                   )) : <span className="text-gray-400 italic pl-1">None</span>}
                                 </div>
                               </div>
                               <div>
-                                <span className="font-semibold text-gray-700 block mb-1">Measures:</span>
+                                <span className="font-semibold text-gray-700 block mb-1">Rows (Y-Axis) / Measures:</span>
                                 <div className="max-h-24 overflow-y-auto bg-white border border-blue-100 rounded p-1 space-y-0.5">
-                                  {ws.measures?.length > 0 ? ws.measures.map((m, i) => (
-                                    <div key={i} className="truncate pl-1 border-l-2 border-green-200 text-gray-600">{m.name}</div>
+                                  {(ws.measures || ws.rows || []).length > 0 ? (ws.measures || ws.rows || []).map((m, i) => (
+                                    <div key={i} className="truncate pl-1 border-l-2 border-green-200 text-gray-600">{typeof m === 'object' ? m.name || m.caption : String(m)}</div>
                                   )) : <span className="text-gray-400 italic pl-1">None</span>}
                                 </div>
                               </div>
