@@ -97,35 +97,8 @@ export default function HomePage() {
           </h1>
 
           <p className="text-base md:text-lg text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-            Accelerate modernization of legacy BI assets. Our multi-agent system intelligently
-            analyzes, translates, and packages your dashboards into production-ready
-            Power BI Projects (PBIP) with logic-preserving DAX and complete TMDL schemas.
+            Accelerate legacy BI modernization with our multi-agent system. The <strong className="text-gray-900">Dashboard Intelligence Agent</strong> extracts visual configs and models, while the <strong className="text-gray-900">BI Migration Agent</strong> converts DAX, runs parity checks, and packages the final Power BI project.
           </p>
-        </section>
-
-        {/* Agent Architecture Section */}
-        <section className="max-w-3xl mx-auto mb-16 text-center">
-          <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-4">Multi-Agent Architecture</h2>
-          <div className="space-y-6 text-left bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Brain className="w-5 h-5 text-teal-600" />
-                Dashboard Intelligence Agent
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Understands what each dashboard does — extracts chart types, visual configs, data models, calculated fields, and generates plain-English summaries.
-              </p>
-            </div>
-            <div className="border-t border-gray-100 pt-4">
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Cpu className="w-5 h-5 text-orange-600" />
-                BI Migration Agent
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Converts, validates & exports — builds semantic models, transpiles expressions to DAX, runs parity checks, and packages the final Power BI project.
-              </p>
-            </div>
-          </div>
         </section>
 
         {/* Choose Your Migration Agent */}
