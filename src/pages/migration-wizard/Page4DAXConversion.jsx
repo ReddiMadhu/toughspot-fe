@@ -43,6 +43,9 @@ export default function Page4DAXConversion() {
   const [editFormula, setEditFormula] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Track whether user has dismissed the agent stream overlay
+  const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+
   // Auto-trigger Agent 3 on mount if idle
   useEffect(() => {
     if (!migrationId) {
@@ -55,12 +58,12 @@ export default function Page4DAXConversion() {
     }
   }, [migrationId]);
 
-  // Load results when agent completes
+  // Load results when agent completes (only after user dismisses overlay)
   useEffect(() => {
-    if (status === 'completed' && migrationId) {
+    if (status === 'completed' && migrationId && userDismissedOverlay) {
       loadResults();
     }
-  }, [status, migrationId]);
+  }, [status, migrationId, userDismissedOverlay]);
 
   const loadResults = async () => {
     setIsLoadingResults(true);
@@ -114,21 +117,27 @@ export default function Page4DAXConversion() {
     }
   };
 
+  // Handler for overlay Next button
+  const handleOverlayNext = () => {
+    setUserDismissedOverlay(true);
+  };
+
   // ── Processing State ──
-  if (status === 'running' || status === 'idle') {
+  // Show overlay when running, idle, OR completed but not yet dismissed
+  if (status === 'running' || status === 'idle' || (status === 'completed' && !userDismissedOverlay)) {
     return (
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={3} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">DAX Formula Conversion</h1>
+            <h1 className="text-2xl font-bold text-gray-900">DAX Extractor</h1>
             <p className="text-sm text-gray-600 mt-1">
-              Agent translating formulas and running fidelity validation loop...
+              BI Migration Agent translating formulas and running fidelity validation...
             </p>
           </div>
           <AgentProcessingOverlay
             agentName="dax_conversion"
-            agentDisplayName="DAX Conversion Agent"
+            agentDisplayName="BI Migration Agent"
             events={events}
             status={status}
             progress={progress}
@@ -136,6 +145,7 @@ export default function Page4DAXConversion() {
             message={message}
             error={error}
             onRetry={retry}
+            onNext={handleOverlayNext}
           />
         </div>
       </div>
@@ -149,11 +159,11 @@ export default function Page4DAXConversion() {
         <MigrationSidebar currentStep={3} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">DAX Formula Conversion</h1>
+            <h1 className="text-2xl font-bold text-gray-900">DAX Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="dax_conversion"
-            agentDisplayName="DAX Conversion Agent"
+            agentDisplayName="BI Migration Agent"
             events={events}
             status="failed"
             error={error}

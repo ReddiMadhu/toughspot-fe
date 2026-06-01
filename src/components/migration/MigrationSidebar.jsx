@@ -11,8 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Database,
-  Grid,
+  BarChart3,
+  GitBranch,
   Code,
   Package,
   CheckCircle,
@@ -25,10 +25,10 @@ import {
 import useAgentStore from '../../stores/agentStore';
 
 const MIGRATION_STEPS = [
-  { id: 1, name: 'Source Dashboard Exploration', agent: 'source_analysis', icon: Database, pathSuffix: 'data-understanding' },
-  { id: 2, name: 'Data Model Configuration',     agent: 'data_model',      icon: Grid,     pathSuffix: 'model-intelligence' },
-  { id: 3, name: 'DAX Conversion & Validation',  agent: 'dax_conversion',  icon: Code,     pathSuffix: 'dax-conversion' },
-  { id: 4, name: 'Export & Package',              agent: 'export',          icon: Package,  pathSuffix: 'export' },
+  { id: 1, name: 'Chart & Visual Extractor',      agent: 'source_analysis', agentLabel: 'Dashboard Intelligence Agent', icon: BarChart3,  pathSuffix: 'data-understanding' },
+  { id: 2, name: 'Data Model Extractor',           agent: 'data_model',      agentLabel: 'Dashboard Intelligence Agent', icon: GitBranch,  pathSuffix: 'model-intelligence' },
+  { id: 3, name: 'DAX Extractor',                  agent: 'dax_conversion',  agentLabel: 'BI Migration Agent',           icon: Code,       pathSuffix: 'dax-conversion' },
+  { id: 4, name: 'Package Builder',                agent: 'export',          agentLabel: 'BI Migration Agent',           icon: Package,    pathSuffix: 'export' },
 ];
 
 export default function MigrationSidebar({ currentStep = 1 }) {
@@ -80,8 +80,8 @@ export default function MigrationSidebar({ currentStep = 1 }) {
               <Layers className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Enterprise BI</p>
-              <p className="text-base font-extrabold text-gray-900 leading-tight">Modernization Suite</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Enterprise</p>
+              <p className="text-base font-extrabold text-gray-900 leading-tight">BI Migration Studio</p>
             </div>
           </div>
         )}
@@ -149,13 +149,13 @@ export default function MigrationSidebar({ currentStep = 1 }) {
                     }`}>
                       {step.name}
                     </div>
-                    <div className={`text-xs ${
+                    <div className={`text-[11px] ${
                       isRunning ? 'text-primary-600 font-semibold' :
                       isCompleted ? 'text-emerald-600 font-semibold' :
                       isFailed ? 'text-red-500 font-semibold' :
-                      'text-gray-500'
+                      'text-gray-400'
                     }`}>
-                      Step {step.id} of 4 · {statusLabel}
+                      {statusLabel}
                     </div>
                   </div>
                 )}
@@ -169,7 +169,7 @@ export default function MigrationSidebar({ currentStep = 1 }) {
       {!isCollapsed && (
         <div className="p-4 border-t border-gray-200">
           <div className="text-xs text-gray-500 text-center">
-            Progress: {currentStep}/4
+            BI Migration Studio
           </div>
         </div>
       )}

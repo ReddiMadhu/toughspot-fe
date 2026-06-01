@@ -52,6 +52,9 @@ export default function Page2ModelIntelligence() {
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [activeTab, setActiveTab] = useState('erd'); // 'erd' | 'logic-graph' | 'classifications' | 'enhancements'
 
+  // Track whether user has dismissed the agent stream overlay
+  const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+
   // Auto-trigger Agent 2 on mount if idle
   useEffect(() => {
     if (!migrationId) {
@@ -64,12 +67,12 @@ export default function Page2ModelIntelligence() {
     }
   }, [migrationId]);
 
-  // Load results when agent completes
+  // Load results when agent completes (only after user dismisses overlay)
   useEffect(() => {
-    if (status === 'completed' && migrationId) {
+    if (status === 'completed' && migrationId && userDismissedOverlay) {
       loadResults();
     }
-  }, [status, migrationId]);
+  }, [status, migrationId, userDismissedOverlay]);
 
   const loadResults = async () => {
     setIsLoadingResults(true);
@@ -102,21 +105,27 @@ export default function Page2ModelIntelligence() {
     navigate(`/migration-wizard/${migrationId}/dax-conversion`);
   };
 
+  // Handler for overlay Next button
+  const handleOverlayNext = () => {
+    setUserDismissedOverlay(true);
+  };
+
   // ── Processing State ──
-  if (status === 'running' || status === 'idle') {
+  // Show overlay when running, idle, OR completed but not yet dismissed
+  if (status === 'running' || status === 'idle' || (status === 'completed' && !userDismissedOverlay)) {
     return (
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={2} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Data Model & calculations Analysis</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Data Model Extractor</h1>
             <p className="text-sm text-gray-600 mt-1">
-              Agent building schema ERD and compiling logic graph...
+              Dashboard Intelligence Agent building schema ERD and compiling logic graph...
             </p>
           </div>
           <AgentProcessingOverlay
             agentName="data_model"
-            agentDisplayName="Data Model Agent"
+            agentDisplayName="Dashboard Intelligence Agent"
             events={events}
             status={status}
             progress={progress}
@@ -124,6 +133,7 @@ export default function Page2ModelIntelligence() {
             message={message}
             error={error}
             onRetry={retry}
+            onNext={handleOverlayNext}
           />
         </div>
       </div>
@@ -137,11 +147,11 @@ export default function Page2ModelIntelligence() {
         <MigrationSidebar currentStep={2} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Data Model & Calculations Analysis</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Data Model Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="data_model"
-            agentDisplayName="Data Model Agent"
+            agentDisplayName="Dashboard Intelligence Agent"
             events={events}
             status="failed"
             error={error}

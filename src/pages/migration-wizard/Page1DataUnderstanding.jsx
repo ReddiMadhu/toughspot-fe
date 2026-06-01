@@ -54,6 +54,9 @@ export default function Page1DataUnderstanding() {
   // Selected Worksheet for cross-filtering calculated fields
   const [selectedWorksheet, setSelectedWorksheet] = useState(null);
 
+  // Track whether user has dismissed the agent stream overlay
+  const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+
   // Auto-trigger Agent 1 on mount (only if idle)
   useEffect(() => {
     if (!migrationId) {
@@ -201,21 +204,30 @@ export default function Page1DataUnderstanding() {
     );
   };
 
+  // Handler for overlay Next button
+  const handleOverlayNext = () => {
+    setUserDismissedOverlay(true);
+    if (!metadata) {
+      loadResults();
+    }
+  };
+
   // ── Processing State — Show Agent Overlay ─────────────────────────────────
-  if (status === 'running' || status === 'idle') {
+  // Show overlay when running, idle, OR completed but not yet dismissed by user
+  if (status === 'running' || status === 'idle' || (status === 'completed' && !userDismissedOverlay)) {
     return (
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={1} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Source Dashboard Exploration</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Chart & Visual Extractor</h1>
             <p className="text-sm text-gray-600 mt-1">
-              Agent analyzing your ThoughtSpot SpotApp...
+              Dashboard Intelligence Agent analyzing your SpotApp...
             </p>
           </div>
           <AgentProcessingOverlay
             agentName="source_analysis"
-            agentDisplayName="Source Analysis Agent"
+            agentDisplayName="Dashboard Intelligence Agent"
             events={events}
             status={status}
             progress={progress}
@@ -223,6 +235,7 @@ export default function Page1DataUnderstanding() {
             message={message}
             error={error}
             onRetry={retry}
+            onNext={handleOverlayNext}
           />
         </div>
       </div>
@@ -236,11 +249,11 @@ export default function Page1DataUnderstanding() {
         <MigrationSidebar currentStep={1} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Source Dashboard Exploration</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Chart & Visual Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="source_analysis"
-            agentDisplayName="Source Analysis Agent"
+            agentDisplayName="Dashboard Intelligence Agent"
             events={events}
             status="failed"
             error={error}

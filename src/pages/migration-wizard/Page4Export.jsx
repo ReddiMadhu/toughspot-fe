@@ -131,6 +131,9 @@ export default function Page4Export() {
   const [metadata, setMetadata] = useState(null);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
 
+  // Track whether user has dismissed the agent stream overlay
+  const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+
   // Auto-trigger Agent 4 on mount if idle
   useEffect(() => {
     if (!migrationId) {
@@ -143,12 +146,12 @@ export default function Page4Export() {
     }
   }, [migrationId]);
 
-  // Load results when agent completes
+  // Load results when agent completes (only after user dismisses overlay)
   useEffect(() => {
-    if (status === 'completed' && migrationId) {
+    if (status === 'completed' && migrationId && userDismissedOverlay) {
       loadResults();
     }
-  }, [status, migrationId]);
+  }, [status, migrationId, userDismissedOverlay]);
 
   const loadResults = async () => {
     setIsLoadingResults(true);
@@ -177,21 +180,27 @@ export default function Page4Export() {
     setTimeout(() => setDownloading((prev) => ({ ...prev, [fileType]: false })), 2000);
   };
 
+  // Handler for overlay Next button
+  const handleOverlayNext = () => {
+    setUserDismissedOverlay(true);
+  };
+
   // ── Processing State ──
-  if (status === 'running' || status === 'idle') {
+  // Show overlay when running, idle, OR completed but not yet dismissed
+  if (status === 'running' || status === 'idle' || (status === 'completed' && !userDismissedOverlay)) {
     return (
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={4} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Packaging &amp; Exporting</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Package Builder</h1>
             <p className="text-sm text-gray-600 mt-1">
-              Agent assembling final project files and packages...
+              BI Migration Agent assembling final project files and packages...
             </p>
           </div>
           <AgentProcessingOverlay
             agentName="export"
-            agentDisplayName="Export Agent"
+            agentDisplayName="BI Migration Agent"
             events={events}
             status={status}
             progress={progress}
@@ -199,6 +208,7 @@ export default function Page4Export() {
             message={message}
             error={error}
             onRetry={retry}
+            onNext={handleOverlayNext}
           />
         </div>
       </div>
@@ -212,11 +222,11 @@ export default function Page4Export() {
         <MigrationSidebar currentStep={4} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Packaging &amp; Exporting</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Package Builder</h1>
           </div>
           <AgentProcessingOverlay
             agentName="export"
-            agentDisplayName="Export Agent"
+            agentDisplayName="BI Migration Agent"
             events={events}
             status="failed"
             error={error}

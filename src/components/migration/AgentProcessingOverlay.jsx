@@ -15,6 +15,7 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
+  ArrowRight,
   Zap,
   Database,
   Code,
@@ -144,6 +145,7 @@ export default function AgentProcessingOverlay({
   message = '',
   error = null,
   onRetry = null,
+  onNext = null,
 }) {
   const [visibleEvents, setVisibleEvents] = useState([]);
   const eventQueueRef = useRef([]);
@@ -251,27 +253,38 @@ export default function AgentProcessingOverlay({
     );
   }
 
-  // ── Processing State (Running / Idle awaiting) ──
+  // ── Completed State — Show stream with Next button ──
+  const isComplete = status === 'completed';
+
+  // ── Processing / Completed State ──
   return (
     <div className="flex-1 flex flex-col p-6 animate-fade-in">
       {/* Agent Header Card */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-4 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center agent-active-pulse">
-              <Zap className="w-5 h-5 text-primary-600" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isComplete ? 'bg-emerald-50' : 'bg-primary-50 agent-active-pulse'}`}>
+              {isComplete ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              ) : (
+                <Zap className="w-5 h-5 text-primary-600" />
+              )}
             </div>
             <div>
               <h3 className="text-sm font-bold text-gray-900">{agentDisplayName}</h3>
-              <p className="text-xs text-gray-500 font-medium">
-                {subPhase || 'Initializing...'}
+              <p className={`text-xs font-medium ${isComplete ? 'text-emerald-600' : 'text-gray-500'}`}>
+                {isComplete ? 'Completed successfully' : (subPhase || 'Initializing...')}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">
-              Active Agent
+          <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border ${isComplete ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-50 border-emerald-100'}`}>
+            {isComplete ? (
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            ) : (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            )}
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isComplete ? 'text-emerald-700' : 'text-emerald-600'}`}>
+              {isComplete ? 'Complete' : 'Active Agent'}
             </span>
           </div>
         </div>
@@ -279,13 +292,13 @@ export default function AgentProcessingOverlay({
         {/* Progress bar */}
         <div className="mb-2">
           <div className="flex justify-between text-[10px] text-gray-400 font-bold mb-1">
-            <span>{message || 'Processing...'}</span>
-            <span>{Math.max(0, displayedProgress)}%</span>
+            <span>{isComplete ? 'Agent finished' : (message || 'Processing...')}</span>
+            <span>{isComplete ? '100' : Math.max(0, displayedProgress)}%</span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className="h-1.5 rounded-full transition-all duration-700 ease-out progress-shimmer"
-              style={{ width: `${Math.max(0, Math.min(100, displayedProgress))}%` }}
+              className={`h-1.5 rounded-full transition-all duration-700 ease-out ${isComplete ? 'bg-emerald-500' : 'progress-shimmer'}`}
+              style={{ width: isComplete ? '100%' : `${Math.max(0, Math.min(100, displayedProgress))}%` }}
             />
           </div>
         </div>
@@ -327,6 +340,19 @@ export default function AgentProcessingOverlay({
           ))}
         </div>
       </div>
+
+      {/* Next button when complete */}
+      {isComplete && onNext && (
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={onNext}
+            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm hover:scale-[1.02]"
+          >
+            Next
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
