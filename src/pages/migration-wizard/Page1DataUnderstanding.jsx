@@ -7,7 +7,7 @@
  *   3. Crossfades to full dashboard when agent completes
  *   4. On revisit (agent already completed), shows dashboard immediately
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Grid,
@@ -56,6 +56,18 @@ export default function Page1DataUnderstanding() {
 
   // Track whether user has dismissed the agent stream overlay
   const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+  const wasRunning = useRef(false);
+
+  // Auto-dismiss overlay if already completed on load
+  useEffect(() => {
+    if (status === 'completed') {
+      if (!wasRunning.current) {
+        setUserDismissedOverlay(true);
+      }
+    } else if (status === 'running') {
+      wasRunning.current = true;
+    }
+  }, [status]);
 
   // Auto-trigger Agent 1 on mount (only if idle)
   useEffect(() => {
@@ -219,11 +231,8 @@ export default function Page1DataUnderstanding() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={1} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Chart & Visual Extractor</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Dashboard Intelligence Agent analyzing your SpotApp...
-            </p>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">Chart & Visual Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="source_analysis"
@@ -248,8 +257,8 @@ export default function Page1DataUnderstanding() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={1} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Chart & Visual Extractor</h1>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">Chart & Visual Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="source_analysis"
@@ -290,13 +299,10 @@ export default function Page1DataUnderstanding() {
 
       <div className="flex-1 flex flex-col overflow-hidden results-fade-in">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Source Dashboard Exploration</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Complete inspection of your ThoughtSpot SpotApp — liveboards, visuals, formulas &amp; tables
-              </p>
+              <h1 className="text-lg font-bold text-gray-900">Chart & Visual Extractor</h1>
             </div>
             <Button onClick={handleNext} size="md" className="px-6">
               Next Step
@@ -487,18 +493,6 @@ export default function Page1DataUnderstanding() {
                       >
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 text-sm truncate">{cf.name}</h3>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              cf.role === 'measure' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                            }`}>
-                              {cf.role || 'measure'}
-                            </span>
-                            {cf.datatype && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                                {cf.datatype}
-                              </span>
-                            )}
-                          </div>
                         </div>
                         {expandedFormulas.has(cf.name) ? (
                           <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
@@ -586,7 +580,7 @@ export default function Page1DataUnderstanding() {
                                 colSpan={Math.min(colNames.length, 10) + (colNames.length > 10 ? 1 : 0)}
                                 className="px-4 py-6 text-center text-xs text-gray-400 italic"
                               >
-                                {`${colNames.length} columns · ${table.row_count?.toLocaleString() || '~5,000'} estimated rows`}
+                                {`${colNames.length} columns`}
                               </td>
                             </tr>
                           </tbody>

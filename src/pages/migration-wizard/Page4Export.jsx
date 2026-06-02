@@ -6,7 +6,7 @@
  *   2. Shows AgentProcessingOverlay during execution (generating PBIP, excel report, packaging zip)
  *   3. Crossfades on completion to display the premium download panel with quick stats, ZIP packaging card, individual downloads, and next steps.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Package,
@@ -32,81 +32,44 @@ import AgentProcessingOverlay from '../../components/migration/AgentProcessingOv
 import { useAgentTrigger } from '../../hooks/useAgentTrigger.js';
 import useMigrationCacheStore from '../../stores/migrationCacheStore.js';
 
-const DOWNLOAD_OPTIONS = [
-  {
-    id: 'all',
-    icon: Package,
-    title: 'Full Migration Package (.zip)',
-    desc: 'PBIP project + Excel report + DAX file + JSON model — everything bundled',
-    color: 'text-primary-600',
-    bg: 'bg-primary-50',
-    border: 'border-primary-200',
-    primary: true,
-  },
-  {
-    id: 'pbip',
-    icon: Package,
-    title: 'PBIP Project (.zip)',
-    desc: 'Power BI Project folder — open directly in Power BI Desktop',
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    border: 'border-blue-100',
-  },
+const ARTIFACT_ITEMS = [
   {
     id: 'excel',
     icon: FileSpreadsheet,
-    title: 'Migration Report (.xlsx)',
-    desc: '5-sheet Excel: DAX Conversions, Data Model, Visualizations, Notes, Dependencies',
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
     border: 'border-emerald-100',
-  },
-  {
-    id: 'dax',
-    icon: FileCode,
-    title: 'DAX Measures (.dax)',
-    desc: 'All converted measures as a standalone DAX file for Power BI paste-in',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-    border: 'border-amber-100',
-  },
-  {
-    id: 'json',
-    icon: FileJson,
-    title: 'Intermediate Model (.json)',
-    desc: 'Parsed ThoughtSpot model as structured JSON for debugging or custom processing',
-    color: 'text-violet-600',
-    bg: 'bg-violet-50',
-    border: 'border-violet-100',
-  },
-];
-
-const PACKAGE_CONTENTS = [
-  {
-    icon: FileSpreadsheet,
-    color: 'text-emerald-600',
     title: 'Excel Report',
     sub: 'migration_report.xlsx',
     desc: 'Conversions index, worksheet mapping, and stats',
   },
   {
+    id: 'pbip',
     icon: Package,
     color: 'text-purple-600',
+    bg: 'bg-purple-50',
+    border: 'border-purple-100',
     title: 'Power BI Project (PBIP)',
     sub: 'pbip/ folder',
     desc: 'Native TMDL model metadata files',
   },
   {
+    id: 'dax',
     icon: FileCode,
     color: 'text-amber-600',
+    bg: 'bg-amber-50',
+    border: 'border-amber-100',
     title: 'DAX Measures File',
     sub: 'measures.dax',
     desc: 'All converted DAX measures for quick copy-paste',
   },
   {
+    id: 'json',
     icon: FileText,
     color: 'text-blue-600',
-    title: 'Model Enhancements Guide',
+    bg: 'bg-blue-50',
+    border: 'border-blue-100',
+    title: 'User Guide',
     sub: 'MODEL_ENHANCEMENTS_REQUIRED.md',
     desc: 'M-scripts and setup steps for window calculations',
   },
@@ -133,6 +96,18 @@ export default function Page4Export() {
 
   // Track whether user has dismissed the agent stream overlay
   const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+  const wasRunning = useRef(false);
+
+  // Auto-dismiss overlay if already completed on load
+  useEffect(() => {
+    if (status === 'completed') {
+      if (!wasRunning.current) {
+        setUserDismissedOverlay(true);
+      }
+    } else if (status === 'running') {
+      wasRunning.current = true;
+    }
+  }, [status]);
 
   // Auto-trigger Agent 4 on mount if idle
   useEffect(() => {
@@ -192,11 +167,8 @@ export default function Page4Export() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={4} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Package Builder</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              BI Migration Agent assembling final project files and packages...
-            </p>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">Package Builder</h1>
           </div>
           <AgentProcessingOverlay
             agentName="export"
@@ -221,8 +193,8 @@ export default function Page4Export() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={4} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Package Builder</h1>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">Package Builder</h1>
           </div>
           <AgentProcessingOverlay
             agentName="export"
@@ -271,13 +243,10 @@ export default function Page4Export() {
 
       <div className="flex-1 flex flex-col overflow-hidden results-fade-in">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Download &amp; Export</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Your ThoughtSpot → Power BI migration is complete. Download your artifacts below.
-              </p>
+              <h1 className="text-lg font-bold text-gray-900">Package Builder</h1>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -329,15 +298,11 @@ export default function Page4Export() {
                   <Download className="w-7 h-7 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">Download Complete Migration Package</h2>
-                <p className="text-gray-500 text-sm mt-1 text-center max-w-lg">
-                  The packaged ZIP contains the full Power BI PBIP folder, DAX measures script,
-                  reconnected tables Excel workbook, and model enhancements guide.
-                </p>
               </div>
 
               {/* Package contents grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8 max-w-3xl mx-auto">
-                {PACKAGE_CONTENTS.map((item) => {
+                {ARTIFACT_ITEMS.map((item) => {
                   const Icon = item.icon;
                   return (
                     <div
@@ -376,27 +341,28 @@ export default function Page4Export() {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <h3 className="text-base font-bold text-gray-900 mb-4">Individual Artifacts</h3>
               <div className="space-y-3">
-                {DOWNLOAD_OPTIONS.filter((o) => o.id !== 'all').map((option) => {
-                  const Icon = option.icon;
-                  const isLoading = downloading[option.id];
+                {ARTIFACT_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isLoading = downloading[item.id];
                   return (
                     <div
-                      key={option.id}
+                      key={item.id}
                       className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
                     >
                       <div
-                        className={`w-10 h-10 rounded-xl ${option.bg} border ${option.border} flex items-center justify-center flex-shrink-0`}
+                        className={`w-10 h-10 rounded-xl ${item.bg} border ${item.border} flex items-center justify-center flex-shrink-0`}
                       >
-                        <Icon className={`w-5 h-5 ${option.color}`} />
+                        <Icon className={`w-5 h-5 ${item.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">{option.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{option.desc}</p>
+                        <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 font-mono">{item.sub}</p>
+                        <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
                       </div>
                       <button
-                        onClick={() => handleDownload(option.id)}
+                        onClick={() => handleDownload(item.id)}
                         disabled={isLoading}
-                        className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all flex-shrink-0 ${option.bg} ${option.color} border ${option.border} hover:brightness-95 disabled:opacity-60`}
+                        className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all flex-shrink-0 ${item.bg} ${item.color} border ${item.border} hover:brightness-95 disabled:opacity-60`}
                       >
                         {isLoading ? (
                           <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />

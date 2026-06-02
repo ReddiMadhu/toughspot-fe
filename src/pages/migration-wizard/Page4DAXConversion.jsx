@@ -6,7 +6,7 @@
  *   2. Shows AgentProcessingOverlay with streaming events during processing
  *   3. Crossfades to the classic, clean tabular results view on completion
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Code,
@@ -45,6 +45,18 @@ export default function Page4DAXConversion() {
 
   // Track whether user has dismissed the agent stream overlay
   const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+  const wasRunning = useRef(false);
+
+  // Auto-dismiss overlay if already completed on load
+  useEffect(() => {
+    if (status === 'completed') {
+      if (!wasRunning.current) {
+        setUserDismissedOverlay(true);
+      }
+    } else if (status === 'running') {
+      wasRunning.current = true;
+    }
+  }, [status]);
 
   // Auto-trigger Agent 3 on mount if idle
   useEffect(() => {
@@ -129,11 +141,8 @@ export default function Page4DAXConversion() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={3} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">DAX Extractor</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              BI Migration Agent translating formulas and running fidelity validation...
-            </p>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">DAX Convertor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="dax_conversion"
@@ -158,8 +167,8 @@ export default function Page4DAXConversion() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={3} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">DAX Extractor</h1>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">DAX Convertor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="dax_conversion"
@@ -195,13 +204,10 @@ export default function Page4DAXConversion() {
 
       <div className="flex-1 flex flex-col overflow-hidden results-fade-in">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">DAX Formula Review</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Inspect converted measures and review semantic validation results
-              </p>
+              <h1 className="text-lg font-bold text-gray-900">DAX Convertor</h1>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -221,7 +227,7 @@ export default function Page4DAXConversion() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-6">
               <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm flex items-center gap-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Code className="w-5 h-5 text-blue-600" />
@@ -232,13 +238,25 @@ export default function Page4DAXConversion() {
                 </div>
               </div>
 
+              <div className="bg-white rounded-lg border border-green-200 p-5 shadow-sm flex items-center gap-4">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {conversions.filter(c => !c.requires_review).length}
+                  </div>
+                  <div className="text-xs text-gray-500 font-semibold uppercase">Passed</div>
+                </div>
+              </div>
+
               <div className="bg-white rounded-lg border border-purple-200 p-5 shadow-sm flex items-center gap-4">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Grid className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">{metadata?.summary?.total_worksheets || 0}</div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase">Total Visuals</div>
+                  <div className="text-2xl font-bold text-gray-900">{metadata?.summary?.total_dashboards || 0}</div>
+                  <div className="text-xs text-gray-500 font-semibold uppercase">Liveboards</div>
                 </div>
               </div>
 
@@ -268,6 +286,7 @@ export default function Page4DAXConversion() {
                       <th className="px-6 py-3 text-left">Measure Name</th>
                       <th className="px-6 py-3 text-left">Original Formula</th>
                       <th className="px-6 py-3 text-left">Converted DAX Measure</th>
+                      <th className="px-6 py-3 text-center">Status</th>
                       <th className="px-6 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -292,6 +311,20 @@ export default function Page4DAXConversion() {
                               <div className="truncate" title={conv.dax_formula}>
                                 {conv.dax_formula}
                               </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {conv.requires_review ? (
+                              <span
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 cursor-help shadow-sm border border-red-200"
+                                title={conv.notes && conv.notes.length > 0 ? conv.notes[0] : "Requires manual review."}
+                              >
+                                <AlertCircle className="w-3 h-3 text-red-500" /> Failed
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 shadow-sm border border-green-200">
+                                <CheckCircle className="w-3 h-3 text-green-500" /> Passed
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center text-xs font-semibold">

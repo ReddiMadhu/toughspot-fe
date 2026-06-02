@@ -39,14 +39,32 @@ const EVENT_ICONS = {
   graph_building: GitBranch,
   node_added: GitBranch,
   edge_added: GitBranch,
+  relationship_extracted: GitBranch,
   graph_complete: CheckCircle2,
   enhancement_detecting: Shield,
   enhancement_detected: AlertTriangle,
   enhancement_complete: CheckCircle2,
-  // DAX conversion
+  // DAX conversion (LangGraph pipeline events)
   conversion_started: Code,
   formula_converting: Loader2,
   formula_converted: CheckCircle2,
+  formula_circular: AlertTriangle,
+  translation_started: Code,
+  translation_complete: CheckCircle2,
+  syntax_check_started: Shield,
+  syntax_check_passed: CheckCircle2,
+  syntax_check_failed: XCircle,
+  schema_check_started: Shield,
+  schema_check_passed: CheckCircle2,
+  schema_check_failed: XCircle,
+  semantic_check_started: Shield,
+  semantic_check_passed: CheckCircle2,
+  semantic_check_failed: XCircle,
+  autofix_started: Wrench,
+  autofix_attempt: Wrench,
+  autofix_success: CheckCircle2,
+  autofix_exhausted: XCircle,
+  // Legacy DAX events (backward compat)
   validation_started: Shield,
   validation_passed: CheckCircle2,
   validation_failed: XCircle,
@@ -79,10 +97,82 @@ function getEventColor(event) {
   return 'text-primary-600';
 }
 
-// ── Self-healing nesting detection ──────────────────────────────────────────
+// ── Pipeline nesting detection ──────────────────────────────────────────────
+const PIPELINE_EVENTS = new Set([
+  'translation_started', 'translation_complete',
+  'syntax_check_started', 'syntax_check_passed', 'syntax_check_failed',
+  'schema_check_started', 'schema_check_passed', 'schema_check_failed',
+  'semantic_check_started', 'semantic_check_passed', 'semantic_check_failed',
+  'autofix_started', 'autofix_attempt', 'autofix_success', 'autofix_exhausted',
+]);
+
 function isNestedEvent(event) {
   const ev = event.event || '';
-  return ev.startsWith('healing_') || ev === 'validation_passed' || ev === 'validation_failed';
+  return ev.startsWith('healing_') || ev === 'validation_passed' || ev === 'validation_failed'
+    || PIPELINE_EVENTS.has(ev);
+}
+
+// ── Pipeline step labels ────────────────────────────────────────────────────
+const STEP_LABELS = {
+  translation: 'Translation',
+  syntax: 'Syntax Validation',
+  schema: 'Schema Validation',
+  semantic: 'Semantic Validation',
+  autofix: 'Auto-Fix',
+};
+
+const STEP_ORDER = ['translation', 'syntax', 'schema', 'semantic', 'autofix'];
+
+function StepStatusIcon({ status }) {
+  if (status === 'passed' || status === 'complete') {
+    return <CheckCircle2 className="w-3 h-3 text-emerald-500" />;
+  }
+  if (status === 'failed' || status === 'exhausted') {
+    return <XCircle className="w-3 h-3 text-red-500" />;
+  }
+  if (status === 'in_progress') {
+    return <Loader2 className="w-3 h-3 text-amber-500 animate-spin" />;
+  }
+  return <span className="w-3 h-3 text-gray-300 text-center leading-3 font-bold">—</span>;
+}
+
+// ── Formula Checklist Card ──────────────────────────────────────────────────
+function FormulaChecklist({ formulaName, steps, confidence, attemptInfo }) {
+  return (
+    <div className="task-card-enter border border-gray-100 rounded-lg bg-white overflow-hidden shadow-sm">
+      {/* Formula header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <Code className="w-3.5 h-3.5 text-primary-600" />
+          <span className="text-xs font-bold text-gray-800 truncate max-w-[200px]">{formulaName}</span>
+        </div>
+        {confidence != null && <ConfidenceBadge confidence={confidence} />}
+      </div>
+      {/* Step checklist */}
+      <div className="px-3 py-1.5 space-y-0.5">
+        {STEP_ORDER.map((stepKey) => {
+          const status = steps[stepKey] || 'pending';
+          let label = STEP_LABELS[stepKey];
+          if (stepKey === 'autofix' && attemptInfo) {
+            label = `${label} (${attemptInfo})`;
+          }
+          return (
+            <div key={stepKey} className="flex items-center gap-2 py-0.5">
+              <StepStatusIcon status={status} />
+              <span className={`text-[11px] font-medium ${
+                status === 'passed' || status === 'complete' ? 'text-emerald-700' :
+                status === 'failed' || status === 'exhausted' ? 'text-red-600' :
+                status === 'in_progress' ? 'text-amber-700' :
+                'text-gray-400'
+              }`}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ── Confidence badge ────────────────────────────────────────────────────────
@@ -152,6 +242,33 @@ export default function AgentProcessingOverlay({
   const queuedCountRef = useRef(0);
   const timerRef = useRef(null);
   const scrollRef = useRef(null);
+  const [formulaChecklists, setFormulaChecklists] = useState({});
+
+  // Track formula pipeline steps from events
+  useEffect(() => {
+    const checklists = {};
+    for (const ev of events) {
+      const formulaName = ev.data?.formula_name;
+      const step = ev.data?.step;
+      const stepStatus = ev.data?.status;
+      if (!formulaName || !step) continue;
+
+      if (!checklists[formulaName]) {
+        checklists[formulaName] = { steps: {}, confidence: null, attemptInfo: null };
+      }
+      checklists[formulaName].steps[step] = stepStatus || 'in_progress';
+      if (ev.data?.confidence != null) {
+        checklists[formulaName].confidence = ev.data.confidence;
+      }
+      if (ev.data?.attempt != null) {
+        checklists[formulaName].attemptInfo = `attempt ${ev.data.attempt}/${ev.data.max_attempts || 3}`;
+      }
+    }
+    setFormulaChecklists(checklists);
+  }, [events]);
+
+  const isDaxConversion = agentName === 'dax_conversion';
+  const hasFormulaChecklists = isDaxConversion && Object.keys(formulaChecklists).length > 0;
 
   // Dynamic visual progress calculation perfectly aligned with stagger animation
   const totalEvents = events.filter((e) => e.event !== 'stream_connected').length;
@@ -260,44 +377,44 @@ export default function AgentProcessingOverlay({
   return (
     <div className="flex-1 flex flex-col p-6 animate-fade-in">
       {/* Agent Header Card */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isComplete ? 'bg-emerald-50' : 'bg-primary-50 agent-active-pulse'}`}>
+      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 mb-3 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isComplete ? 'bg-emerald-50' : 'bg-primary-50 agent-active-pulse'}`}>
               {isComplete ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               ) : (
-                <Zap className="w-5 h-5 text-primary-600" />
+                <Zap className="w-4 h-4 text-primary-600" />
               )}
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">{agentDisplayName}</h3>
-              <p className={`text-xs font-medium ${isComplete ? 'text-emerald-600' : 'text-gray-500'}`}>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-900">Status:</span>
+              <span className={`text-xs font-semibold ${isComplete ? 'text-emerald-600' : 'text-primary-600'}`}>
                 {isComplete ? 'Completed successfully' : (subPhase || 'Initializing...')}
-              </p>
+              </span>
             </div>
           </div>
-          <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full border ${isComplete ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-50 border-emerald-100'}`}>
+          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${isComplete ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-50 border-emerald-100'}`}>
             {isComplete ? (
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
             ) : (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
             )}
-            <span className={`text-[10px] uppercase tracking-wider font-bold ${isComplete ? 'text-emerald-700' : 'text-emerald-600'}`}>
+            <span className={`text-[9px] uppercase tracking-wider font-bold ${isComplete ? 'text-emerald-700' : 'text-emerald-600'}`}>
               {isComplete ? 'Complete' : 'Active Agent'}
             </span>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="mb-2">
+        <div>
           <div className="flex justify-between text-[10px] text-gray-400 font-bold mb-1">
-            <span>{isComplete ? 'Agent finished' : (message || 'Processing...')}</span>
+            <span className="truncate max-w-[80%]">{isComplete ? 'Agent finished' : (message || 'Processing...')}</span>
             <span>{isComplete ? '100' : Math.max(0, displayedProgress)}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
             <div
-              className={`h-1.5 rounded-full transition-all duration-700 ease-out ${isComplete ? 'bg-emerald-500' : 'progress-shimmer'}`}
+              className={`h-1 rounded-full transition-all duration-700 ease-out ${isComplete ? 'bg-emerald-500' : 'progress-shimmer'}`}
               style={{ width: isComplete ? '100%' : `${Math.max(0, Math.min(100, displayedProgress))}%` }}
             />
           </div>
@@ -330,14 +447,32 @@ export default function AgentProcessingOverlay({
               <span>Initializing agent workspace...</span>
             </div>
           )}
-          {visibleEvents.map((event, i) => (
-            <MicroTaskCard
-              key={i}
-              event={event}
-              index={i}
-              isNested={isNestedEvent(event)}
-            />
-          ))}
+          {/* Formula checklists for DAX conversion */}
+          {hasFormulaChecklists && (
+            <div className="space-y-2 mb-3">
+              {Object.entries(formulaChecklists).map(([name, data]) => (
+                <FormulaChecklist
+                  key={name}
+                  formulaName={name}
+                  steps={data.steps}
+                  confidence={data.confidence}
+                  attemptInfo={data.attemptInfo}
+                />
+              ))}
+            </div>
+          )}
+          {/* Standard event stream (non-pipeline events or for other agents) */}
+          {visibleEvents
+            .filter((ev) => !hasFormulaChecklists || !PIPELINE_EVENTS.has(ev.event || ''))
+            .map((event, i) => (
+              <MicroTaskCard
+                key={i}
+                event={event}
+                index={i}
+                isNested={isNestedEvent(event)}
+              />
+            ))
+          }
         </div>
       </div>
 

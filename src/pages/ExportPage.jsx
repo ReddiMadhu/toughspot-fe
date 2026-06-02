@@ -102,7 +102,7 @@ const PACKAGE_CONTENTS = [
   {
     icon: FileText,
     color: 'text-blue-600',
-    title: 'Model Enhancements Guide',
+    title: 'User Guide',
     sub: 'MODEL_ENHANCEMENTS_REQUIRED.md',
     desc: 'M-scripts and setup steps for window calculations',
   },
@@ -239,7 +239,7 @@ export default function ExportPage() {
                 <h2 className="text-xl font-bold text-gray-900">Download Complete Migration Package</h2>
                 <p className="text-gray-500 text-sm mt-1 text-center max-w-lg">
                   The packaged archive contains the PBIP project folder, DAX measures script,
-                  model enhancements guide, and tabular JSON models.
+                  user guide, and tabular JSON models.
                 </p>
               </div>
 

@@ -11,7 +11,7 @@
  *      - Tab 3: "Classifications & Quality" (Fact/Dim tables, column quality metrics)
  *      - Tab 4: "Model Enhancements" (Presents alerts & instructions for complex ThoughtSpot aggregate functions)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Loader,
@@ -54,6 +54,18 @@ export default function Page2ModelIntelligence() {
 
   // Track whether user has dismissed the agent stream overlay
   const [userDismissedOverlay, setUserDismissedOverlay] = useState(false);
+  const wasRunning = useRef(false);
+
+  // Auto-dismiss overlay if already completed on load
+  useEffect(() => {
+    if (status === 'completed') {
+      if (!wasRunning.current) {
+        setUserDismissedOverlay(true);
+      }
+    } else if (status === 'running') {
+      wasRunning.current = true;
+    }
+  }, [status]);
 
   // Auto-trigger Agent 2 on mount if idle
   useEffect(() => {
@@ -117,11 +129,8 @@ export default function Page2ModelIntelligence() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={2} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Data Model Extractor</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Dashboard Intelligence Agent building schema ERD and compiling logic graph...
-            </p>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">Data Model Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="data_model"
@@ -146,8 +155,8 @@ export default function Page2ModelIntelligence() {
       <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#e5e5e5' }}>
         <MigrationSidebar currentStep={2} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Data Model Extractor</h1>
+          <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
+            <h1 className="text-lg font-bold text-gray-900">Data Model Extractor</h1>
           </div>
           <AgentProcessingOverlay
             agentName="data_model"
@@ -183,13 +192,10 @@ export default function Page2ModelIntelligence() {
 
       <div className="flex-1 flex flex-col overflow-hidden results-fade-in">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-4">
+        <div className="bg-white border-b border-gray-200 shadow-sm px-6 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Data Model Configuration</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Visualizing ERD, formula logic graph dependencies, and suggested model enhancements
-              </p>
+              <h1 className="text-lg font-bold text-gray-900">Data Model Extractor</h1>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -231,26 +237,21 @@ export default function Page2ModelIntelligence() {
           </button>
         </div>
 
-        {/* Tab Contents */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-7xl mx-auto h-full flex flex-col">
+          <div className="w-full h-full flex flex-col">
             {/* Tab 1: Semantic ERD */}
             {activeTab === 'erd' && (
               <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden flex flex-col min-h-[500px]">
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between shrink-0">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Suggested Table Relationships</h2>
-                    <p className="text-xs text-gray-500">Auto-detected cardinality based on ThoughtSpot TML schema</p>
-                  </div>
                   <span className="px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
                     {joins.length} Joins Found
                   </span>
                 </div>
-                <div className="flex-1 relative min-h-[450px]">
+                <div className="flex-1 relative min-h-[350px]">
                   <RelationshipDiagram
                     tables={tables}
                     joins={joins}
-                    height={500}
+                    height="100%"
                     loading={false}
                   />
                 </div>

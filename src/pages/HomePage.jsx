@@ -89,15 +89,15 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight max-w-4xl mx-auto tracking-tight">
-            Migrate Your Dashboards
+            Transform Your Dashboards
             <br />
             <span className="bg-gradient-to-r from-primary-600 via-amber-600 to-primary-700 bg-clip-text text-transparent">
-              to Power BI in minutes
+              with Modern BI Studio
             </span>
           </h1>
 
           <p className="text-base md:text-lg text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-            Accelerate legacy BI modernization with our multi-agent system. The <strong className="text-gray-900">Dashboard Intelligence Agent</strong> extracts visual configs and models, while the <strong className="text-gray-900">BI Migration Agent</strong> converts DAX, runs parity checks, and packages the final Power BI project.
+            Accelerate legacy BI modernization with our multi-agent system. The <strong className="text-gray-900">Dashboard Intelligence Agent</strong> extracts visual configs and models, while the <strong className="text-gray-900">BI Migration Agent</strong> converts formulas, runs parity checks, and packages the final migration project.
           </p>
         </section>
 
@@ -168,7 +168,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <footer className="border-t border-gray-200 py-8 text-center text-xs text-gray-500 mt-8">
-          BI Migration Studio · Powered by Multi-Agent AI + FastAPI + Vite-React
+          BI Migration Studio
         </footer>
 
       </div>

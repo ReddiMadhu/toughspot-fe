@@ -190,7 +190,7 @@ export default function RelationshipDiagram({
 
   return (
     <div
-      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+      className="w-full h-full bg-white overflow-hidden"
       style={{ height }}
     >
       <ReactFlow

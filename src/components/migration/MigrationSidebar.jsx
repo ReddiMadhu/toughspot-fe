@@ -27,7 +27,7 @@ import useAgentStore from '../../stores/agentStore';
 const MIGRATION_STEPS = [
   { id: 1, name: 'Chart & Visual Extractor',      agent: 'source_analysis', agentLabel: 'Dashboard Intelligence Agent', icon: BarChart3,  pathSuffix: 'data-understanding' },
   { id: 2, name: 'Data Model Extractor',           agent: 'data_model',      agentLabel: 'Dashboard Intelligence Agent', icon: GitBranch,  pathSuffix: 'model-intelligence' },
-  { id: 3, name: 'DAX Extractor',                  agent: 'dax_conversion',  agentLabel: 'BI Migration Agent',           icon: Code,       pathSuffix: 'dax-conversion' },
+  { id: 3, name: 'DAX Convertor',                 agent: 'dax_conversion',  agentLabel: 'BI Migration Agent',           icon: Code,       pathSuffix: 'dax-conversion' },
   { id: 4, name: 'Package Builder',                agent: 'export',          agentLabel: 'BI Migration Agent',           icon: Package,    pathSuffix: 'export' },
 ];
 
@@ -149,13 +149,17 @@ export default function MigrationSidebar({ currentStep = 1 }) {
                     }`}>
                       {step.name}
                     </div>
-                    <div className={`text-[11px] ${
-                      isRunning ? 'text-primary-600 font-semibold' :
-                      isCompleted ? 'text-emerald-600 font-semibold' :
-                      isFailed ? 'text-red-500 font-semibold' :
-                      'text-gray-400'
-                    }`}>
-                      {statusLabel}
+                    <div className="text-[10px] text-gray-400 font-normal flex items-center gap-1 mt-0.5">
+                      <span>Agent</span>
+                      <span className="text-gray-300">•</span>
+                      <span className={
+                        isRunning ? 'text-primary-600 font-semibold' :
+                        isCompleted ? 'text-emerald-600 font-semibold' :
+                        isFailed ? 'text-red-500 font-semibold' :
+                        'text-gray-400'
+                      }>
+                        {statusLabel}
+                      </span>
                     </div>
                   </div>
                 )}
