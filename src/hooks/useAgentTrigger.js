@@ -67,10 +67,8 @@ export function useAgentTrigger(migrationId, agentName) {
     }
 
     try {
-      // Mark as running in store first (to start SSE connection)
-      actions.startAgent(agentName);
-
-      // Call backend trigger
+      // Call backend trigger FIRST — this sets _running_agents on the server
+      // and clears stale state, ensuring the SSE stream won't short-circuit
       const res = await migrationApi.startAgent(migrationId, slug, forceRetry);
       console.log(`[AgentTrigger] Agent '${agentName}' triggered (forceRetry=${forceRetry}):`, res);
 
@@ -78,14 +76,20 @@ export function useAgentTrigger(migrationId, agentName) {
       if (res?.status === 'completed') {
         console.log(`[AgentTrigger] Agent '${agentName}' already completed. Skipping stream.`);
         actions.completeAgent(agentName, res.summary || { message: res.message || 'Agent already completed' });
+        return;
       }
+
+      // NOW set the store to running — this triggers the SSE connection
+      // (backend is already ready to serve the stream at this point)
+      actions.startAgent(agentName);
     } catch (err) {
       console.error(`[AgentTrigger] Failed to trigger ${agentName}:`, err);
       const errorMsg = err?.response?.data?.detail || err.message || 'Failed to start agent';
 
-      // If it's a 409 (already running), don't fail — just keep streaming
+      // If it's a 409 (already running), connect to stream anyway
       if (err?.response?.status === 409) {
         console.log(`[AgentTrigger] Agent '${agentName}' already running, connecting to stream...`);
+        actions.startAgent(agentName);
         return;
       }
 
