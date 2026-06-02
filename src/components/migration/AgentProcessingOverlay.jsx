@@ -178,18 +178,7 @@ function FormulaChecklist({ formulaName, steps, confidence, attemptInfo }) {
 
 // ── Confidence badge ────────────────────────────────────────────────────────
 function ConfidenceBadge({ confidence }) {
-  if (confidence == null) return null;
-  const pct = Math.round(confidence * 100);
-  const isPass = pct >= 80;
-  let color = isPass 
-    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-    : 'bg-red-100 text-red-700 border border-red-200';
-
-  return (
-    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${color}`}>
-      {isPass ? 'Pass' : 'Fail'}
-    </span>
-  );
+  return null;
 }
 
 // ── Single micro-task card ──────────────────────────────────────────────────
