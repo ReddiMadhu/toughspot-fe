@@ -69,8 +69,14 @@ export function useAgentTrigger(migrationId, agentName) {
       actions.startAgent(agentName);
 
       // Call backend trigger
-      await migrationApi.startAgent(migrationId, slug);
-      console.log(`[AgentTrigger] Agent '${agentName}' triggered for migration ${migrationId}`);
+      const res = await migrationApi.startAgent(migrationId, slug);
+      console.log(`[AgentTrigger] Agent '${agentName}' triggered:`, res);
+
+      // If the backend returns 'completed' directly, complete the agent in our store
+      if (res?.status === 'completed') {
+        console.log(`[AgentTrigger] Agent '${agentName}' already completed. Skipping stream.`);
+        actions.completeAgent(agentName, res.summary || { message: res.message || 'Agent already completed' });
+      }
     } catch (err) {
       console.error(`[AgentTrigger] Failed to trigger ${agentName}:`, err);
       const errorMsg = err?.response?.data?.detail || err.message || 'Failed to start agent';
