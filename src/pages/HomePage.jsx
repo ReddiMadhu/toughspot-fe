@@ -89,10 +89,8 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight max-w-4xl mx-auto tracking-tight">
-            Transform Your Dashboards
-            <br />
             <span className="bg-gradient-to-r from-primary-600 via-amber-600 to-primary-700 bg-clip-text text-transparent">
-              with Modern BI Studio
+              BI Migration Studio
             </span>
           </h1>
 
