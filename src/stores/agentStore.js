@@ -56,6 +56,28 @@ const useAgentStore = create((set, get) => ({
         };
       }),
 
+    /** Batch-add multiple events in a single state update (used by useAgentStream flush) */
+    addEvents: (agentName, events) =>
+      set((state) => {
+        const agent = state.agents[agentName];
+        if (!agent || events.length === 0) return state;
+        // Reduce all buffered events to final values
+        const last = events[events.length - 1];
+        return {
+          agents: {
+            ...state.agents,
+            [agentName]: {
+              ...agent,
+              status: 'running',
+              progress: last.progress ?? agent.progress,
+              subPhase: last.sub_phase ?? last.subPhase ?? agent.subPhase,
+              message: last.message ?? agent.message,
+              events: [...agent.events, ...events],
+            },
+          },
+        };
+      }),
+
     completeAgent: (agentName, summary = {}) =>
       set((state) => ({
         agents: {

@@ -99,6 +99,7 @@ function getEventColor(event) {
 
 // ── Pipeline nesting detection ──────────────────────────────────────────────
 const PIPELINE_EVENTS = new Set([
+  'conversion_started',
   'translation_started', 'translation_complete',
   'syntax_check_started', 'syntax_check_passed', 'syntax_check_failed',
   'schema_check_started', 'schema_check_passed', 'schema_check_failed',
@@ -388,11 +389,16 @@ export default function AgentProcessingOverlay({
                 <Zap className="w-4 h-4 text-primary-600" />
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-gray-900">Status:</span>
               <span className={`text-xs font-semibold ${isComplete ? 'text-emerald-600' : 'text-primary-600'}`}>
                 {isComplete ? 'Completed successfully' : (subPhase || 'Initializing...')}
               </span>
+              {!isComplete && message && (
+                <span className="text-xs text-gray-500 font-medium ml-2 border-l border-gray-250 pl-2">
+                  {message}
+                </span>
+              )}
             </div>
           </div>
           <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${isComplete ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-50 border-emerald-100'}`}>
@@ -410,7 +416,7 @@ export default function AgentProcessingOverlay({
         {/* Progress bar */}
         <div>
           <div className="flex justify-between text-[10px] text-gray-400 font-bold mb-1">
-            <span className="truncate max-w-[80%]">{isComplete ? 'Agent finished' : (message || 'Processing...')}</span>
+            <span className="truncate max-w-[80%]"></span>
             <span>{isComplete ? '100' : Math.max(0, displayedProgress)}%</span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-1 overflow-hidden">

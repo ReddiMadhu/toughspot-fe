@@ -19,6 +19,7 @@ import {
   ChevronUp,
   Loader,
   BarChart2,
+  Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -146,13 +147,29 @@ export default function Page1DataUnderstanding() {
   // ── Data Helpers ──────────────────────────────────────────────────────────────
   const getAllWorksheets = () => {
     if (!metadata?.workbooks) return [];
-    const sheets = metadata.workbooks.flatMap((wb) =>
+    let sheets = metadata.workbooks.flatMap((wb) =>
       wb.worksheets.map((ws) => ({ ...ws, workbook: wb.filename }))
     );
-    if (!worksheetSearch) return sheets;
-    return sheets.filter((ws) =>
-      ws.name.toLowerCase().includes(worksheetSearch.toLowerCase())
-    );
+    if (worksheetSearch) {
+      sheets = sheets.filter((ws) =>
+        ws.name.toLowerCase().includes(worksheetSearch.toLowerCase())
+      );
+    }
+    
+    // Sort logic: Column/Bar/Advanced_Bar first, Bubble last
+    return [...sheets].sort((a, b) => {
+      const getWeight = (ws) => {
+        const type = String(ws.ts_chart_type || ws.mark_type || '').toUpperCase();
+        if (type.includes('COLUMN') || type.includes('BAR')) {
+          return -2; // highest priority (top)
+        }
+        if (type.includes('BUBBLE')) {
+          return 2; // lowest priority (bottom)
+        }
+        return 0; // middle
+      };
+      return getWeight(a) - getWeight(b);
+    });
   };
 
   const getAllCalculatedFields = () => {
@@ -541,19 +558,39 @@ export default function Page1DataUnderstanding() {
                   const colNames = Array.isArray(table.columns)
                     ? table.columns
                     : (table.column_details || []).map((c) => c.name);
+                  
+                  // Table description dictionary from the user's screenshot
+                  const TABLE_DESCRIPTIONS = {
+                    'marker_actvation': "Markers' aggregated scores",
+                    'marker_coactivation_data': "Markers' coactivation details",
+                    'marker_seq_pairs2': "Markers' sequential patterns",
+                    'dim_marker': "Markers' dimension table",
+                    'markerchunk_1': "Marker scores at policy & claim level",
+                    'chunk_1': "Policy and claims data"
+                  };
+                  const tableDesc = TABLE_DESCRIPTIONS[table.display_name?.toLowerCase()];
+
                   return (
                     <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden">
                       <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <div>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-gray-900">{table.display_name}</h3>
                             {table.data_source && (
                               <p className="text-xs text-gray-500 mt-0.5">
                                 Source: <span className="font-medium">{table.data_source}</span>
                               </p>
                             )}
+                            {tableDesc && (
+                              <div className="flex items-center gap-2 mt-2 px-2.5 py-1.5 bg-blue-50/70 border border-blue-100 rounded-lg text-xs text-slate-600 animate-fade-in max-w-xl">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 animate-pulse" />
+                                <span className="truncate" title={tableDesc}>
+                                  <strong>AI Description:</strong> {tableDesc}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-gray-600 flex-shrink-0">
                             {table.row_count?.toLocaleString() || '—'} rows × {colNames.length} columns
                           </span>
                         </div>

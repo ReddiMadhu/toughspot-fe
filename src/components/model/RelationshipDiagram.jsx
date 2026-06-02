@@ -17,14 +17,27 @@ import ReactFlow, {
   Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Spinner from '../common/Spinner.jsx';
+import { Database, Sparkles } from 'lucide-react';
+
+// Table description dictionary from the user's screenshot
+const TABLE_DESCRIPTIONS = {
+  'marker_actvation': "Markers' aggregated scores",
+  'marker_coactivation_data': "Markers' coactivation details",
+  'marker_seq_pairs2': "Markers' sequential patterns",
+  'dim_marker': "Markers' dimension table",
+  'markerchunk_1': "Marker scores at policy & claim level",
+  'chunk_1': "Policy and claims data"
+};
 
 // ── Custom Table Node ──────────────────────────────────────────────────────────
 // ── Custom Table Node ──────────────────────────────────────────────────────────
 function TableNode({ data }) {
+  const tableDesc = TABLE_DESCRIPTIONS[data.label?.toLowerCase()];
+
   return (
-    <div className="bg-white rounded-lg border-2 border-primary-200 shadow-md min-w-[165px] overflow-hidden relative">
+    <div className="bg-white rounded-lg border-2 border-primary-200 shadow-md min-w-[180px] overflow-hidden relative">
       <Handle
         type="target"
         position={Position.Left}
@@ -37,7 +50,15 @@ function TableNode({ data }) {
       />
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-3 py-2">
         <p className="text-xs font-bold text-white truncate">{data.label}</p>
-        <p className="text-[10px] text-primary-200">
+        {tableDesc && (
+          <p className="text-blue-100 mt-1 leading-tight font-medium flex items-center gap-1" style={{ fontSize: '6.75px' }}>
+            <Sparkles className="text-yellow-300 flex-shrink-0 animate-pulse" style={{ width: '8px', height: '8px' }} />
+            <span className="truncate" title={tableDesc}>
+              {tableDesc}
+            </span>
+          </p>
+        )}
+        <p className="text-[10px] text-primary-200 mt-1">
           {data.columnCount} column{data.columnCount !== 1 ? 's' : ''}
         </p>
       </div>
@@ -151,12 +172,23 @@ export default function RelationshipDiagram({
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedJoin, setSelectedJoin] = useState(null);
 
   useEffect(() => {
     const { nodes: n, edges: e } = buildGraphElements(tables, joins);
     setNodes(n);
     setEdges(e);
+    setSelectedJoin(null); // Clear selected join on model reload
   }, [tables, joins]);
+
+  const onEdgeClick = (event, edge) => {
+    // Edge IDs are build in buildGraphElements as `e${i}`
+    const joinIdx = parseInt(edge.id.slice(1), 10);
+    const join = joins[joinIdx];
+    if (join) {
+      setSelectedJoin(join);
+    }
+  };
 
   if (loading) {
     return (
@@ -190,28 +222,59 @@ export default function RelationshipDiagram({
 
   return (
     <div
-      className="w-full h-full bg-white overflow-hidden"
+      className="w-full h-full bg-white overflow-hidden relative flex flex-col"
       style={{ height }}
     >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={NODE_TYPES}
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
-        minZoom={0.3}
-        maxZoom={2}
-      >
-        <Controls className="bg-white border border-gray-200 rounded-lg shadow-sm" />
-        <MiniMap
-          nodeColor="#ec3f06"
-          maskColor="rgba(249,250,251,0.7)"
-          style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }}
-        />
-        <Background color="#e5e7eb" gap={20} size={1} />
-      </ReactFlow>
+      <div className="flex-1 relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onEdgeClick={onEdgeClick}
+          nodeTypes={NODE_TYPES}
+          fitView
+          fitViewOptions={{ padding: 0.15 }}
+          minZoom={0.3}
+          maxZoom={2}
+        >
+          <Controls className="bg-white border border-gray-200 rounded-lg shadow-sm" />
+          <MiniMap
+            nodeColor="#ec3f06"
+            maskColor="rgba(249,250,251,0.7)"
+            style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }}
+          />
+          <Background color="#e5e7eb" gap={20} size={1} />
+        </ReactFlow>
+
+        {selectedJoin && (
+          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur border border-primary-100 rounded-xl p-4 shadow-lg z-50 flex items-center justify-between animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center text-primary-650 flex-shrink-0">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Semantic Join Details</p>
+                <p className="text-sm font-semibold text-gray-950">
+                  <span className="text-primary-650 font-bold">'{selectedJoin.left_table}'</span>[{selectedJoin.left_column}]
+                  <span className="mx-2 text-gray-400">→</span>
+                  <span className="text-primary-650 font-bold">'{selectedJoin.right_table}'</span>[{selectedJoin.right_column}]
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                  Type: <span className="font-semibold text-gray-700">{selectedJoin.join_type}</span> | 
+                  Cardinality: <span className="font-semibold text-gray-700">{selectedJoin.cardinality?.replace(/_/g, ' ')}</span>
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedJoin(null)}
+              className="text-gray-400 hover:text-gray-655 text-xs font-bold px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

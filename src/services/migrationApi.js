@@ -368,9 +368,9 @@ const migrationApi = {
   // Multi-Agent Execution
   // ============================================
 
-  startAgent: async (migrationId, agentSlug) => {
+  startAgent: async (migrationId, agentSlug, retry = false) => {
     const response = await apiClient.post(
-      `/ts-migration/${migrationId}/agents/${agentSlug}/start`
+      `/ts-migration/${migrationId}/agents/${agentSlug}/start${retry ? '?retry=true' : ''}`
     );
     return response.data;
   },

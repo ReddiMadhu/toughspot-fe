@@ -6,7 +6,7 @@
  *   onTableClick  (tableName) => void   optional selection callback
  *   selectedTable string                currently selected table name
  */
-import { Database, Columns3, Hash, Type } from 'lucide-react';
+import { Database, Columns3, Hash, Type, Sparkles } from 'lucide-react';
 
 const TYPE_ICON = {
   string:   { label: 'abc', color: 'text-blue-500 bg-blue-50' },
@@ -14,6 +14,16 @@ const TYPE_ICON = {
   double:   { label: '1.0', color: 'text-amber-600 bg-amber-50' },
   boolean:  { label: 'T/F', color: 'text-purple-600 bg-purple-50' },
   dateTime: { label: 'date', color: 'text-rose-500 bg-rose-50' },
+};
+
+// Table description dictionary from the user's screenshot
+const TABLE_DESCRIPTIONS = {
+  'marker_actvation': "Markers' aggregated scores",
+  'marker_coactivation_data': "Markers' coactivation details",
+  'marker_seq_pairs2': "Markers' sequential patterns",
+  'dim_marker': "Markers' dimension table",
+  'markerchunk_1': "Marker scores at policy & claim level",
+  'chunk_1': "Policy and claims data"
 };
 
 function TypeBadge({ dataType }) {
@@ -27,6 +37,8 @@ function TypeBadge({ dataType }) {
 
 function TableCard({ table, selected, onClick }) {
   const cols = table.column_details || [];
+  const tableDesc = TABLE_DESCRIPTIONS[table.name?.toLowerCase()];
+  
   return (
     <div
       onClick={() => onClick?.(table.name)}
@@ -38,14 +50,22 @@ function TableCard({ table, selected, onClick }) {
       `}
     >
       {/* Table header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-inherit">
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${selected ? 'bg-primary-600' : 'bg-gray-100'}`}>
+      <div className="flex items-start gap-2.5 px-4 py-3 border-b border-inherit">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${selected ? 'bg-primary-600' : 'bg-gray-100'}`}>
           <Database className={`w-4 h-4 ${selected ? 'text-white' : 'text-gray-500'}`} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-gray-900 truncate">{table.name}</p>
           {table.source && (
             <p className="text-[10px] text-gray-500 truncate font-mono">{table.source}</p>
+          )}
+          {tableDesc && (
+            <div className="flex items-center gap-1.5 mt-1.5 px-2 py-1 bg-blue-50/70 border border-blue-100 rounded text-[10px] text-slate-600 animate-fade-in">
+              <Sparkles className="w-3 h-3 text-amber-500 flex-shrink-0 animate-pulse" />
+              <span className="truncate" title={tableDesc}>
+                {tableDesc}
+              </span>
+            </div>
           )}
         </div>
         <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium">

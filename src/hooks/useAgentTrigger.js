@@ -13,7 +13,9 @@ const AGENT_SLUG_MAP = {
 
 export function useAgentTrigger(migrationId, agentName) {
   const agentState = useAgentStore((state) => state.agents[agentName]);
-  const { actions } = useAgentStore();
+  // Get actions via getState() — NOT via useAgentStore() — to avoid
+  // subscribing to the entire store and causing re-render loops.
+  const actions = useAgentStore.getState().actions;
 
   const isStreamActive = agentState?.status === 'running';
 
@@ -55,7 +57,7 @@ export function useAgentTrigger(migrationId, agentName) {
     }
   }, [agentState?.status, agentName]);
 
-  const trigger = useCallback(async () => {
+  const trigger = useCallback(async (forceRetry = false) => {
     if (!migrationId || !agentName) return;
 
     const slug = AGENT_SLUG_MAP[agentName];
@@ -69,8 +71,8 @@ export function useAgentTrigger(migrationId, agentName) {
       actions.startAgent(agentName);
 
       // Call backend trigger
-      const res = await migrationApi.startAgent(migrationId, slug);
-      console.log(`[AgentTrigger] Agent '${agentName}' triggered:`, res);
+      const res = await migrationApi.startAgent(migrationId, slug, forceRetry);
+      console.log(`[AgentTrigger] Agent '${agentName}' triggered (forceRetry=${forceRetry}):`, res);
 
       // If the backend returns 'completed' directly, complete the agent in our store
       if (res?.status === 'completed') {
@@ -95,7 +97,7 @@ export function useAgentTrigger(migrationId, agentName) {
     actions.resetAgent(agentName);
     // Small delay to let state settle before re-triggering
     await new Promise((r) => setTimeout(r, 200));
-    await trigger();
+    await trigger(true);
   }, [agentName, actions, trigger]);
 
   return useMemo(() => ({

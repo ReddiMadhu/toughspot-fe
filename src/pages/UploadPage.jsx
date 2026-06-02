@@ -18,7 +18,7 @@ import useAgentStore from '../stores/agentStore.js';
 export default function UploadPage() {
   const navigate = useNavigate();
   const { actions } = useMigrationStore();
-  const { actions: agentActions } = useAgentStore();
+  const agentActions = useAgentStore.getState().actions;
 
   const [files, setFiles]           = useState([]);
   const [isUploading, setIsUploading] = useState(false);
