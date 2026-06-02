@@ -17,8 +17,7 @@ import {
   Edit2,
   Check,
   X,
-  Grid,
-  Database
+  XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -227,7 +226,7 @@ export default function Page4DAXConversion() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm flex items-center gap-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Code className="w-5 h-5 text-blue-600" />
@@ -250,23 +249,15 @@ export default function Page4DAXConversion() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-purple-200 p-5 shadow-sm flex items-center gap-4">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Grid className="w-5 h-5 text-purple-600" />
+              <div className="bg-white rounded-lg border border-red-200 p-5 shadow-sm flex items-center gap-4">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">{metadata?.summary?.total_dashboards || 0}</div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase">Liveboards</div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg border border-orange-200 p-5 shadow-sm flex items-center gap-4">
-                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Database className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{metadata?.summary?.total_tables || 0}</div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase">Model Tables</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {conversions.filter(c => c.requires_review).length}
+                  </div>
+                  <div className="text-xs text-gray-500 font-semibold uppercase">Failed</div>
                 </div>
               </div>
             </div>
