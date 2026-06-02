@@ -112,13 +112,17 @@ export default function Page4DAXConversion() {
   const saveOverride = async (conversionId) => {
     setSaving(true);
     try {
-      await migrationApi.updateConversion(
+      const res = await migrationApi.updateConversion(
         migrationId,
         conversionId,
         editFormula,
         "User manual override in wizard"
       );
-      toast.success('Formula updated and re-validated');
+      if (res && res.is_valid === false) {
+        toast.error('Formula failed validation and requires review');
+      } else {
+        toast.success('Formula updated and validated successfully');
+      }
       setEditingConvId(null);
       await loadResults(); // Reload results
     } catch (error) {

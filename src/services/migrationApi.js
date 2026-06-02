@@ -354,6 +354,16 @@ const migrationApi = {
     return response.data;
   },
 
+  getJsonModel: async (migrationId) => {
+    const response = await apiClient.get(
+      `/ts-migration/${migrationId}/download`,
+      {
+        params: { file: 'json' }
+      }
+    );
+    return response.data;
+  },
+
   // ============================================
   // Multi-Agent Execution
   // ============================================

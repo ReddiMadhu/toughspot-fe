@@ -89,10 +89,8 @@ export default function Page2ModelIntelligence() {
   const loadResults = async () => {
     setIsLoadingResults(true);
     try {
-      // 1. Fetch tables and joins from JSON download
-      const response = await fetch(`/api/v1/ts-migration/${migrationId}/download?file=json`);
-      if (!response.ok) throw new Error(`Status: ${response.status}`);
-      const data = await response.json();
+      // 1. Fetch tables and joins from JSON download using environment-aware API helper
+      const data = await migrationApi.getJsonModel(migrationId);
       if (data?.tables) {
         setTables(data.tables);
         setJoins(data.joins || []);

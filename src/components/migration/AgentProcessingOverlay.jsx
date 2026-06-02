@@ -179,13 +179,14 @@ function FormulaChecklist({ formulaName, steps, confidence, attemptInfo }) {
 function ConfidenceBadge({ confidence }) {
   if (confidence == null) return null;
   const pct = Math.round(confidence * 100);
-  let color = 'bg-emerald-100 text-emerald-700 border border-emerald-200';
-  if (pct < 60) color = 'bg-red-100 text-red-700 border border-red-200';
-  else if (pct < 90) color = 'bg-amber-100 text-amber-700 border border-amber-200';
+  const isPass = pct >= 80;
+  let color = isPass 
+    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+    : 'bg-red-100 text-red-700 border border-red-200';
 
   return (
     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${color}`}>
-      {pct}%
+      {isPass ? 'Pass' : 'Fail'}
     </span>
   );
 }
