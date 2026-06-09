@@ -62,24 +62,25 @@ stages:
             displayName: 'Deploy to static website'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              scriptType: 'bash'
+              scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Get storage account key (avoids --auth-mode login RBAC issues)
-                ACCOUNT_KEY=$(az storage account keys list \
-                  --account-name $(storageAccountName) \
-                  --query '[0].value' -o tsv)
+                $container = '$web'
+                $account   = '$(storageAccountName)'
+                $source    = '$(Pipeline.Workspace)/frontend-dist'
 
-                # Clear old files from $web container
-                az storage blob delete-batch \
-                  --account-name $(storageAccountName) \
-                  --account-key "$ACCOUNT_KEY" \
-                  --source '$web'
+                # Get storage account key
+                $key = (az storage account keys list --account-name $account --query "[0].value" -o tsv)
+                Write-Host "✅ Got account key for $account"
 
-                # Upload new build files (content-types are set automatically)
-                az storage blob upload-batch \
-                  --account-name $(storageAccountName) \
-                  --account-key "$ACCOUNT_KEY" \
-                  --destination '$web' \
-                  --source '$(Pipeline.Workspace)/frontend-dist' \
-                  --overwrite true
+                # Clear old files
+                az storage blob delete-batch --account-name $account --account-key $key --source $container
+                Write-Host "✅ Cleared old blobs from $container"
+
+                # Upload new build files
+                az storage blob upload-batch --account-name $account --account-key $key --destination $container --source $source --overwrite true
+                Write-Host "✅ Uploaded build files to $container"
+
+                # Verify: list blobs to confirm upload
+                $count = (az storage blob list --account-name $account --account-key $key --container-name $container --query "length(@)" -o tsv)
+                Write-Host "✅ Verification: $count blobs now in $container"
