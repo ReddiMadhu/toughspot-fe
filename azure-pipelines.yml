@@ -58,68 +58,28 @@ stages:
         deploy:
           steps:
 
-          # Clear old files from $web container
           - task: AzureCLI@2
-            displayName: 'Delete old blobs in $web'
+            displayName: 'Deploy to static website'
             inputs:
               azureSubscription: '$(azureSubscription)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                # Get storage account key (avoids --auth-mode login RBAC issues)
+                ACCOUNT_KEY=$(az storage account keys list \
+                  --account-name $(storageAccountName) \
+                  --query '[0].value' -o tsv)
+
+                # Clear old files from $web container
                 az storage blob delete-batch \
                   --account-name $(storageAccountName) \
-                  --source '$web' \
-                  --auth-mode login
+                  --account-key "$ACCOUNT_KEY" \
+                  --source '$web'
 
-          # Upload new build files
-          - task: AzureCLI@2
-            displayName: 'Upload dist/ to $web'
-            inputs:
-              azureSubscription: '$(azureSubscription)'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
+                # Upload new build files (content-types are set automatically)
                 az storage blob upload-batch \
                   --account-name $(storageAccountName) \
+                  --account-key "$ACCOUNT_KEY" \
                   --destination '$web' \
                   --source '$(Pipeline.Workspace)/frontend-dist' \
-                  --auth-mode login \
                   --overwrite true
-
-          # Set correct content types for web assets
-          - task: AzureCLI@2
-            displayName: 'Set content-type for JS/CSS files'
-            inputs:
-              azureSubscription: '$(azureSubscription)'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                # Ensure JS files have correct MIME type
-                az storage blob list \
-                  --account-name $(storageAccountName) \
-                  --container-name '$web' \
-                  --auth-mode login \
-                  --query "[?ends_with(name, '.js')].name" -o tsv | \
-                while read blob; do
-                  az storage blob update \
-                    --account-name $(storageAccountName) \
-                    --container-name '$web' \
-                    --name "$blob" \
-                    --content-type "application/javascript" \
-                    --auth-mode login
-                done
-
-                # Ensure CSS files have correct MIME type
-                az storage blob list \
-                  --account-name $(storageAccountName) \
-                  --container-name '$web' \
-                  --auth-mode login \
-                  --query "[?ends_with(name, '.css')].name" -o tsv | \
-                while read blob; do
-                  az storage blob update \
-                    --account-name $(storageAccountName) \
-                    --container-name '$web' \
-                    --name "$blob" \
-                    --content-type "text/css" \
-                    --auth-mode login
-                done
